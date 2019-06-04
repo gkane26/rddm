@@ -1,0 +1,20 @@
+Package: rddm
+Type: Package
+Title: Fit diffusion models to experimental data
+Version: 1.0
+Date: 2019-05-28
+Author: Gary Kane
+Maintainer: Gary Kane <gkane@alumni.princeton.edu>
+Description: Pure DDM and extended DDM (Bogacz et al., 2006) using rtdist package    Collapsing bounds (Voskuilen et al., 2016)    Pulse diffusion model (see Brunton et al., 2013)
+License: GPL-3
+Imports: 
+    Rcpp,
+    R6,
+    rtdists,
+    data.table,
+    optimx
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+RoxygenNote: 6.1.1
+Encoding: UTF-8
