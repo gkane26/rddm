@@ -25,7 +25,7 @@ diffusion_model$new(dat, model_name)
 
 \item{extra_condition}{character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.}
 
-\item{bounds_function}{character: "weibull" for weibull function, "hyperbolic_ratio" for hyperbolic ratio function, default = "hyperbolic_ratio"}
+\item{use_weibull_bound}{logical: if T, use weibull function for collapsing bounds. Default = F}
 
 \item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times}
 }

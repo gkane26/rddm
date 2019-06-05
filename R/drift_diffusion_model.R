@@ -53,7 +53,7 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions = c
   list(rt_qs, p_q)
 }
 
-init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds_function="hyperbolic_ratio", objective=NULL, ...){
+init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, use_weibull_bound=T, objective=NULL, ...){
   
   super$initialize(dat, model_name)
   
@@ -127,15 +127,6 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
         names(fixed_pars)[length(fixed_pars)] = all_pars[i]
       }
     }
-  }
-  
-  if(bounds_function=="weibull"){
-    use_weibull_bound=T
-  }else if(bounds_function=="hyperbolic_ratio"){
-    use_weibull_bound=F
-  }else{
-    use_weibull_bound=F
-    warning("WARNING :: specified bounds function not supported. using hyperbolic ratio bound")
   }
   
   ddm_integral_nll = function(pars, min_p=1e-10, transform_pars=F, debug_lik=F, ...){
@@ -322,8 +313,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
 #' @param fixed_pars named numeric; to fix a parameter at a specified value, use a named vector as with start_values
 #' @param max_time numeric; max time to simulate a decision. Lower max time keeps computation times lower, but too low will compromise accuracy
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
-#' @param bounds_function character: "weibull" for weibull function, "hyperbolic_ratio" for hyperbolic ratio function, default = "hyperbolic_ratio"
+#' @param use_weibull_bound logical: if T, use weibull function for collapsing bounds. Default = F
 #' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times
+#'
 #' @return definition of base diffusion model object
 #'#' 
 #' @export

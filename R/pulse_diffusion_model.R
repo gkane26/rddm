@@ -12,7 +12,7 @@ set_pm_parameters = function(pars){
   for(i in 1:length(private$fixed)) private$par_matrix[, names(private$fixed[i]) := as.numeric(private$fixed[i])]
 }
 
-init_pulse_model = function(dat, model_name="pdm", include=NULL, depends_on=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds_function="hyperbolic_ratio", ...){
+init_pulse_model = function(dat, model_name="pdm", include=NULL, depends_on=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, use_weibull_bound=F, ...){
   
   super$initialize(dat, model_name)
   
@@ -87,15 +87,6 @@ init_pulse_model = function(dat, model_name="pdm", include=NULL, depends_on=NULL
     }
   }
   
-  if(bounds_function=="weibull"){
-    use_weibull_bound=T
-  }else if(bounds_function=="hyperbolic_ratio"){
-    use_weibull_bound=F
-  }else{
-    use_weibull_bound=F
-    warning("WARNING :: specified bounds function not supported. using hyperbolic ratio bound")
-  }
-  
   rm_trans_par_cols = 1 + ifelse(is.null(simulate_conditions), 0, length(simulate_conditions))
   par_transform = par_transform[, -(1:rm_trans_par_cols)]
   
@@ -146,7 +137,7 @@ init_pulse_model = function(dat, model_name="pdm", include=NULL, depends_on=NULL
 #' @param start_values named numeric; to change default starting parameter values, specify as named vector. E.g. c("v"=2, "a"=3) to set drift rate to 2 and boundary to 3
 #' @param fixed_pars named numeric; to fix a parameter at a specified value, use a named vector as with start_values
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
-#' @param bounds_function character: "weibull" for weibull function, "hyperbolic_ratio" for hyperbolic ratio function, default = "hyperbolic_ratio"
+#' @param use_weibull_bound logical: if T, use weibull function for collapsing bounds. Default = F
 #'
 #' @return definition of base diffusion model object
 #'#' 
