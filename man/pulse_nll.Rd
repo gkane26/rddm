@@ -7,7 +7,8 @@
 pulse_nll(choices, rt, blink_seq, v, a, t0, z = 0L, sv = 0L,
   st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L,
   kappa = 0L, tc = 0L, check_pars = TRUE, dt = 0.002, dx = 0.05,
-  use_weibull_bound = FALSE, dur = 0.01, isi = 0.1, n_threads = 1L)
+  v_scale = 10, use_weibull_bound = FALSE, dur = 0.01, isi = 0.1,
+  n_threads = 1L)
 }
 \arguments{
 \item{rt}{numeric; vector of response times}
@@ -41,6 +42,8 @@ pulse_nll(choices, rt, blink_seq, v, a, t0, z = 0L, sv = 0L,
 \item{dt}{numeric; time step of simulation, default = .002}
 
 \item{dx}{numeric; size of evidence bins, default = .05}
+
+\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 10}
 
 \item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
 

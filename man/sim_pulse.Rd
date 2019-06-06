@@ -6,7 +6,8 @@
 \usage{
 sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
   s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = 0.25,
-  dt = 0.001, use_weibull_bound = FALSE, n_threads = 1L)
+  dt = 0.001, v_scale = 10, use_weibull_bound = FALSE,
+  n_threads = 1L)
 }
 \arguments{
 \item{n}{integer; number of decisions to simulate}
@@ -38,6 +39,8 @@ sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 \item{tc}{numeric; time constant of collapse, default = .25}
 
 \item{dt}{numeric; time step of simulation, default = .001}
+
+\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 10}
 
 \item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
 

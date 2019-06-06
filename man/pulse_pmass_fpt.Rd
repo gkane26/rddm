@@ -6,7 +6,7 @@
 \usage{
 pulse_pmass_fpt(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0,
   s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = 0.25,
-  dt = 0.002, dx = 0.05, use_weibull_bound = FALSE)
+  dt = 0.002, dx = 0.05, v_scale = 10, use_weibull_bound = FALSE)
 }
 \arguments{
 \item{stimulus}{integer vector; stimulus to simulate (1 for evidence to upper boundary, -1 to lower boundary, 0 for no evidence)}
@@ -38,6 +38,8 @@ pulse_pmass_fpt(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0,
 \item{dt}{numeric; time step of simulation, default = .002}
 
 \item{dx}{numeric; size of evidence bins, default = .05}
+
+\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 10}
 
 \item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
 }

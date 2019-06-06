@@ -28,9 +28,9 @@ init_pulse_model = function(dat, model_name="pdm", include=NULL, depends_on=NULL
   
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "lambda", "a_prime", "kappa", "tc", "s")
-  values = c(10, 1, .3, .5, 0, 0, 0, 0, 0, 0, .25, 1)
-  lower = c(-100, .01, 1e-10, .2, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
-  upper = c(100, 10, 1, .8, 10, .2, .2, 1, 1, 5, 2, 5)
+  values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, .25, 1)
+  lower = c(-10, .01, 1e-10, .2, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
+  upper = c(10, 10, 1, .8, 10, .2, .2, 1, 1, 5, 2, 5)
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
