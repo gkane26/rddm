@@ -90,20 +90,20 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
   // get boundary vector
   arma::vec bound;
   if(use_weibull_bound)
-    bound = weibull_bound(arma::regspace(dt, dt, stimulus.n_elem*dt), a, a_prime, kappa, tc);
+    bound = weibull_bound(arma::regspace(dt, dt, stimulus.n_elem*dt+dt), a, a_prime, kappa, tc);
   else
-    bound = hyperbolic_ratio_bound(arma::regspace(dt, dt, stimulus.n_elem*dt), a, kappa, tc);
+    bound = hyperbolic_ratio_bound(arma::regspace(dt, dt, stimulus.n_elem*dt+dt), a, kappa, tc);
 
   unsigned int low_bound_index = 0,
     up_bound_index = t_mat.n_rows-1;
-
+  
   //iterate through time and over bins
   for(unsigned int t=1; t<stimulus.n_elem; t++){
-
+    
     // adjust transition matrix for dynamic bounds
     low_bound_index = arma::max(arma::find(bin_breaks <= -bound(t)));
     up_bound_index = arma::min(arma::find(bin_breaks >= bound(t)))+1;
-
+    
     // get transition matrix
     double sigma2 = s*dt + sv*abs(stimulus(t))*v*dt*dt;
     for(unsigned int j=1; j<t_mat.n_rows-1; j++){
@@ -270,8 +270,9 @@ double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> blink
       p_local=1e-10;
     
 #pragma omp critical
+{
     p_rt += log(p_local);
-    
+}   
   }
   
     return -p_rt;
