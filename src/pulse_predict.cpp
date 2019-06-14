@@ -46,7 +46,7 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
                         double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
   
   // check parameter vectors
-  int stim_length = stim_seq.size();
+  unsigned int stim_length = stim_seq.size();
   if(check_pars){
     z(arma::find(z==0)).fill(0.5);
     s(arma::find(s==0)).fill(1);

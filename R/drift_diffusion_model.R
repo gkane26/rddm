@@ -310,15 +310,15 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
 }
 
 check_par_constraints <- function(){
-  checks = sum(private$par_matrix[, a > 0]) # a
-  checks = checks + sum(private$par_matrix[, t0 >= 0]) # t0
-  checks = checks + private$par_matrix[, (z > 0) & (z < 1)] # z
-  checks = checks + private$par_matrix[, sz < z] # sz
-  checks = checks + private$par_matrix[, st0 < t0] # st0
-  checks = checks + private$par_matrix[, (a_prime >= 0) & (a_prime <= 1)] # a_prime
-  checks = checks + private$par_matrix[, kappa >= 0] # kappa
-  checks = checks + private$par_matrix[, tc > 0] # tc
-  checks = checks + private$par_matrix[, s > 0] # s
+  checks = sum(private$par_matrix[, a <= 0]) # a
+  checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
+  checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
+  checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
+  checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
+  checks = checks + sum(private$par_matrix[, (a_prime < 0) & (a_prime > 1)]) # a_prime
+  checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
+  checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
+  checks = checks + sum(private$par_matrix[, s <= 0]) # s
   return(checks == 0)
 }
 
