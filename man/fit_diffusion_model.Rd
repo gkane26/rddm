@@ -4,9 +4,7 @@
 \alias{fit_diffusion_model}
 \title{Fit diffusion model (for internal use)}
 \usage{
-fit_diffusion_model(method = NULL, save_dir = NA, base_file = NA,
-  check_prior_fit = F, refit = F, transform_pars = F,
-  use_bounds = F, n_cons = 0, max_tries = 25, tol = 1e-05, ...)
+diffusion_model$fit()
 }
 \arguments{
 \item{method}{string; optimization method to use, see optimx method argument, default = NULL -- will use Nelder-Mead if unbounded or nlminb if bounds specified.}

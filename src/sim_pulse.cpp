@@ -23,7 +23,7 @@ using namespace Rcpp;
 //' @param kappa numeric; slope of collapse, default = 1
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param dt numeric; time step of simulation, default = .001
-//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 //' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' 
@@ -31,10 +31,10 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-DataFrame sim_pulse(int n, arma::vec stimulus, double v, double a, double t0,
+DataFrame sim_pulse(int n, arma::ivec stimulus, double v, double a, double t0,
                       double z=.5, double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
                       double a_prime=0, double kappa=0, double tc=.25, 
-                      double dt=.001, double v_scale=10, bool use_weibull_bound=false, int n_threads=1){
+                      double dt=.001, double v_scale=100, bool use_weibull_bound=false, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   int n_on_thread = n / n_threads;

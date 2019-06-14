@@ -90,13 +90,13 @@ get_stimulus <- function(sequence, intensity = 1, dur = 0.01, isi = 0.1, dt = 0.
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .002
 #' @param dx numeric; size of evidence bins, default = .05
-#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 #' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 #'
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 10, use_weibull_bound = FALSE) {
+pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE) {
     .Call('_rddm_pulse_pmass_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound)
 }
 
@@ -104,7 +104,7 @@ pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, 
 #'
 #' @param choice int; decision on trial, 0 for lower boundary, 1 for upper
 #' @param rt numeric; response time on trial
-#' @param stimulus string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+#' @param stim_seq string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
 #' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
@@ -119,23 +119,23 @@ pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, 
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .002
 #' @param dx numeric; size of evidence bins, default = .05
-#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 #' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 #' @param dur numeric; duration of stimulus
 #' @param isi numeric; interstimulus interval
 #'
-#' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+#' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, blink_seq, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 10, use_weibull_bound = FALSE, dur = .01, isi = .1) {
-    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, blink_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound, dur, isi)
+pulse_trial_lik <- function(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1) {
+    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound, dur, isi)
 }
 
 #' Get pulse model negative log likelihood for a set of trials
 #'
 #' @param choice integer; vector of decisions, 0 for lower boundary, 1 for upper
 #' @param rt numeric; vector of response times
-#' @param stimulus vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+#' @param stim_seq vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
 #' @param v numeric; drift rate, either single value or vector for each trial
 #' @param a numeric; initial boundary, either single value or vector for each trial
 #' @param t0 numeric; non-decision time, either single value or vector for each trial
@@ -151,17 +151,48 @@ pulse_trial_lik <- function(choice, rt, blink_seq, v, a, t0, z = 0, sv = 0, st0 
 #' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 #' @param dt numeric; time step of simulation, default = .002
 #' @param dx numeric; size of evidence bins, default = .05
-#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 #' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 #' @param dur numeric; duration of stimulus
 #' @param isi numeric; interstimulus interval
 #' @param n_threads int; number of threads (trials) to run in parallel
 #'
-#' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+#' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, blink_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 10, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
-    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, blink_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
+pulse_nll <- function(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
+    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
+}
+
+#' Get predicted behavior from pulse model
+#'
+#' @param n int; number of predicted samples to take per stimulus
+#' @param stim_seq vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+#' @param v numeric; drift rate, either single value or vector for each trial
+#' @param a numeric; initial boundary, either single value or vector for each trial
+#' @param t0 numeric; non-decision time, either single value or vector for each trial
+#' @param z numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5
+#' @param sv numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0
+#' @param st0 numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
+#' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1
+#' @param lambda numeric; O-U process slope, either single value or vector for each trial
+#' @param a_prime numeric; degree of collapse, either single value or vector for each trial, default = 0
+#' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
+#' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
+#' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
+#' @param dt numeric; time step of simulation, default = .001
+#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
+#' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+#' @param dur numeric; duration of stimulus
+#' @param isi numeric; interstimulus interval
+#' @param n_threads int; number of threads (trials) to run in parallel
+#'
+#' @return data frame with two columns: response (1 for upper boundary, 0 for lower), response time
+#'
+#' @export
+pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
+    .Call('_rddm_pulse_predict', PACKAGE = 'rddm', n, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -207,14 +238,14 @@ sim_ddm <- function(n, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, a_prime = 0, k
 #' @param kappa numeric; slope of collapse, default = 1
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .001
-#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+#' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 #' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' 
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #' 
 #' @export
-sim_pulse <- function(n, stimulus, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .001, v_scale = 10, use_weibull_bound = FALSE, n_threads = 1L) {
+sim_pulse <- function(n, stimulus, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .001, v_scale = 100, use_weibull_bound = FALSE, n_threads = 1L) {
     .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, v_scale, use_weibull_bound, n_threads)
 }
 

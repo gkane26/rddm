@@ -14,7 +14,7 @@ base_diffusion_model$new(dat, model_name)
 \item{model_name}{string (optional); name to identify model}
 }
 \value{
-definition of base diffusion model object
+fills in the fields: fit_info, fit_obj, fit_par, fit_cons, fit_aic, fit_bic in diffusion_model object
 }
 \description{
 Base diffusion model object

@@ -129,7 +129,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     }
   }
   
-  ddm_integral_nll = function(pars, min_p=1e-10, transform_pars=F, debug_lik=F, ...){
+  ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_lik=F, ...){
+    
+    if(is.null(dat)) dat = self$data
     
     #check params
     if(transform_pars){
@@ -153,7 +155,7 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     # }
     
     # get likelihood for each rt
-    nll_dat = get_rt_liks(copy(self$data), density_list, min_p=min_p)
+    nll_dat = get_rt_liks(copy(dat), density_list, min_p=min_p)
     
     # get negative log likelihood
     nll = -sum(log(nll_dat[,p_rt]))
@@ -162,7 +164,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     if(debug_lik) cat(nll, "\n")
     return(nll)
   }
-  ddm_rtdists_nll = function(pars, min_p=1e-10, transform_pars=F, debug_lik=F){
+  ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_lik=F){
+    
+    if(is.null(dat)) dat = self$data
     
     #check params
     if(transform_pars){
@@ -179,7 +183,7 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     # loop through conditions to get likelihood
     nll = 0
     for(i in 1:this_par_matrix[, .N]){
-      sub_dat = copy(self$data)
+      sub_dat = copy(dat)
       for(j in 1:length(private$sim_cond)){
         sub_dat = sub_dat[get(private$sim_cond[j]) == this_par_matrix[i, get(private$sim_cond[j])]]
       }
@@ -193,7 +197,12 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     if(debug_lik) cat(nll, "\n")
     return(nll)
   }
-  ddm_sim_x2 = function(pars, n_sim=10000, transform_pars=F, debug_lik=F, ...){
+  ddm_sim_x2 = function(pars, dat=NULL, n_sim=10000, transform_pars=F, debug_lik=F, qs=seq(.1, .9, .2), rt_var="rt", conditions=c("correctSide"), ...){
+    
+    if(is.null(dat))
+      dat_q = self$data_q
+    else
+      dat_q = get_rt_quantiles(dat, qs=qs, rt_var=rt_var, conditions=conditions)
     
     #check params
     if(transform_pars){
@@ -208,9 +217,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
     
     # loop through conditions to get likelihood
     chisq = 0
-    rt_q_idx = ((length(self$data_q)-length(private$p_q)+2):length(self$data_q))
+    rt_q_idx = ((length(dat_q)-length(private$p_q)+2):length(dat_q))
     for(i in 1:pars_only_mat[, .N]){
-      sub_q = copy(self$data_q)
+      sub_q = copy(dat_q)
       for(j in 1:length(private$sim_cond)){
         sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
       }
@@ -300,6 +309,18 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
   private$use_weibull_bound=use_weibull_bound
 }
 
+check_par_constraints <- function(){
+  checks = sum(private$par_matrix[, a > 0]) # a
+  checks = checks + sum(private$par_matrix[, t0 >= 0]) # t0
+  checks = checks + private$par_matrix[, (z > 0) & (z < 1)] # z
+  checks = checks + private$par_matrix[, sz < z] # sz
+  checks = checks + private$par_matrix[, st0 < t0] # st0
+  checks = checks + private$par_matrix[, (a_prime >= 0) & (a_prime <= 1)] # a_prime
+  checks = checks + private$par_matrix[, kappa >= 0] # kappa
+  checks = checks + private$par_matrix[, tc > 0] # tc
+  checks = checks + private$par_matrix[, s > 0] # s
+  return(checks == 0)
+}
 
 #' Drift diffusion model object
 #'
@@ -317,7 +338,7 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
 #' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times
 #'
 #' @return definition of base diffusion model object
-#'#' 
+#'
 #' @export
 diffusion_model = R6::R6Class("diffusion_model",
                           inherit=base_diffusion_model,
@@ -327,5 +348,6 @@ diffusion_model = R6::R6Class("diffusion_model",
                           ), private=list(
                             p_q=NULL,
                             max_time=NULL,
-                            set_params=set_dm_parameters
+                            set_params=set_dm_parameters,
+                            check_par_constraints=check_par_constraints
                           ))

@@ -4,15 +4,17 @@
 \alias{pulse_trial_lik}
 \title{Get pulse model likelihood for a given trial}
 \usage{
-pulse_trial_lik(choice, rt, blink_seq, v, a, t0, z = 0, sv = 0,
+pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0,
   st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0,
-  tc = 0.25, dt = 0.002, dx = 0.05, v_scale = 10,
+  tc = 0.25, dt = 0.002, dx = 0.05, v_scale = 100,
   use_weibull_bound = FALSE, dur = 0.01, isi = 0.1)
 }
 \arguments{
 \item{choice}{int; decision on trial, 0 for lower boundary, 1 for upper}
 
 \item{rt}{numeric; response time on trial}
+
+\item{stim_seq}{string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
 
 \item{v}{numeric; drift rate}
 
@@ -42,18 +44,16 @@ pulse_trial_lik(choice, rt, blink_seq, v, a, t0, z = 0, sv = 0,
 
 \item{dx}{numeric; size of evidence bins, default = .05}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 10}
+\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
 
 \item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
 
 \item{dur}{numeric; duration of stimulus}
 
 \item{isi}{numeric; interstimulus interval}
-
-\item{stimulus}{string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
 }
 \value{
-data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+probability of choice and rt for trial given pulse model parameters
 }
 \description{
 Get pulse model likelihood for a given trial

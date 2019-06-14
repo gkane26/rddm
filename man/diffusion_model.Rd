@@ -31,7 +31,6 @@ diffusion_model$new(dat, model_name)
 }
 \value{
 definition of base diffusion model object
-#'
 }
 \description{
 Drift diffusion model object

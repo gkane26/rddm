@@ -1,4 +1,6 @@
 #' Fit diffusion model (for internal use)
+#' 
+#' @usage diffusion_model$fit()
 #'
 #' @param method string; optimization method to use, see optimx method argument, default = NULL -- will use Nelder-Mead if unbounded or nlminb if bounds specified.
 #' @param save_dir string; path to directory to save results. will save results only if specified. default = NA
@@ -75,11 +77,9 @@ fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_pr
     
     cat("Fitting Model =", self$name, "// Subject =", self$data[1,subject], "\n\n")
     
-    start_low = private$lower
-    start_up = private$upper
     if(use_bounds){
-      self$start_values[self$start_values < start_low] = start_low[self$start_values < start_low]
-      self$start_values[self$start_values > start_up] = start_up[self$start_values > start_up]
+      self$start_values[self$start_values < private$lower] = private$lower[self$start_values < private$lower]
+      self$start_values[self$start_values > private$upper] = private$upper[self$start_values > private$upper]
     }
     
     convergence = F
@@ -132,8 +132,8 @@ fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_pr
       
       if(!convergence){
         start = rnorm(length(self$fit_par), self$fit_par, abs(as.numeric(self$fit_par))*.05)
-        start[start>start_up] = start_up[start>start_up]
-        start[start<start_low] = start_low[start<start_low]
+        start[start>private$upper] = private$upper[start>private$upper]
+        start[start<private$lower] = private$lower[start<private$lower]
         if(transform_pars)
           start = logistic_transform(start)
         
@@ -142,8 +142,8 @@ fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_pr
         #   old_val = fit$value
         # }else{
         #   start = rnorm(length(diffusion_model$fit_par), diffusion_model$fit_par, abs(as.numeric(diffusion_model$fit_par))*.05)
-        #   start[start>start_up] = start_up[start>start_up]
-        #   start[start<start_low] = start_low[start<start_low]
+        #   start[start>private$upper] = private$upper[start>private$upper]
+        #   start[start<private$lower] = private$lower[start<private$lower]
         #   if(transform_pars)
         #     start = logistic_transform(start, diffusion_model$lower, diffusion_model$upper)
         # }
@@ -159,6 +159,20 @@ fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_pr
     #cat("model =", self$name, "done! // par =", self$fit_par, "// obj =", self$fit_obj, " // time =", fit_time, "\n")
 }
 
+get_aic <- function(pars=NULL, dat=NULL, ...){
+  if(is.null(pars)) pars=self$fit_par
+  if(is.null(dat)) dat=self$data
+  obj = self$obj(pars, dat, ...)
+  return(2*length(pars) + 2*obj)
+}
+
+get_bic <- function(pars=NULL, dat=NULL, ...){
+  if(is.null(pars)) pars=self$fit_par
+  if(is.null(dat)) dat=self$data
+  obj = self$obj(pars, dat, ...)
+  return(log(dat[,.N])*length(pars) + 2*obj)
+}
+
 
 #' Base diffusion model object
 #'
@@ -167,7 +181,7 @@ fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_pr
 #' @param dat data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)
 #' @param model_name string (optional); name to identify model
 #'
-#' @return definition of base diffusion model object
+#' @return fills in the fields: fit_info, fit_obj, fit_par, fit_cons, fit_aic, fit_bic in diffusion_model object
 #'
 #' @import data.table
 #' 
@@ -203,6 +217,8 @@ base_diffusion_model <- R6::R6Class("base_diffusion_model",
                                       par_matrix=NULL,
                                       sim_cond=NULL,
                                       use_weibull_bound=NULL,
+                                      get_aic=get_aic,
+                                      get_bic=get_bic,
                                       logistic_untransform=function(pars) (private$upper-private$lower) / (1 + exp(-pars)) + private$lower,
                                       logistic_transform=function(pars) -log((private$upper-private$lower)/(pars-private$lower) - 1)
                                     ))

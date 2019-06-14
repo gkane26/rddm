@@ -1,6 +1,7 @@
 #include "RcppArmadillo.h"
 #include "bounds.h"
 #include "omp.h"
+#include "RcppArmadilloExtensions/sample.h"
 using namespace Rcpp;
 //[[Rcpp::depends(RcppArmadillo)]]
 //[[Rcpp::plugins(openmp)]]
@@ -26,16 +27,17 @@ using namespace Rcpp;
 arma::ivec get_stimulus(std::string sequence, double intensity=1, double dur=0.01, double isi=0.1, double dt=0.001){
 
   int stim_bins = round(dur/dt),
-    blink_bins = round(isi/dt);
+    pulse_bins = round(isi/dt);
 
-  arma::ivec stimulus = arma::zeros<arma::ivec>(blink_bins*(sequence.size()+1));
+  arma::ivec stimulus = arma::zeros<arma::ivec>(pulse_bins*(sequence.size()+1));
   for(unsigned int i=0; i<sequence.size(); i++){
     int this_stim = std::stoi(sequence.substr(i,1));
-    stimulus(arma::span((i+1)*blink_bins, (i+1)*blink_bins+stim_bins-1)).fill(2*this_stim-1);
+    stimulus(arma::span((i+1)*pulse_bins, (i+1)*pulse_bins+stim_bins-1)).fill(2*this_stim-1);
   }
 
   return stimulus;
 }
+
 
 //' Get first passage time distribution of pulse diffusion model by simulating probability mass
 //'
@@ -54,7 +56,7 @@ arma::ivec get_stimulus(std::string sequence, double intensity=1, double dur=0.0
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param dt numeric; time step of simulation, default = .002
 //' @param dx numeric; size of evidence bins, default = .05
-//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 //' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 //'
 //' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
@@ -64,7 +66,7 @@ arma::ivec get_stimulus(std::string sequence, double intensity=1, double dur=0.0
 arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, double z=0,
                       double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
                       double a_prime=0, double kappa=0, double tc=.25,
-                      double dt=.002, double dx=.05, double v_scale=10, bool use_weibull_bound=false){
+                      double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false){
 
   // make bins
   int n_x_breaks = round(a / dx);
@@ -152,7 +154,7 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
 //'
 //' @param choice int; decision on trial, 0 for lower boundary, 1 for upper
 //' @param rt numeric; response time on trial
-//' @param stimulus string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+//' @param stim_seq string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
 //' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
@@ -167,22 +169,22 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param dt numeric; time step of simulation, default = .002
 //' @param dx numeric; size of evidence bins, default = .05
-//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 //' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 //' @param dur numeric; duration of stimulus
 //' @param isi numeric; interstimulus interval
 //'
-//' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+//' @return probability of choice and rt for trial given pulse model parameters
 //'
 //' @export
 // [[Rcpp::export]]
-double pulse_trial_lik(int choice, double rt, std::string blink_seq,
+double pulse_trial_lik(int choice, double rt, std::string stim_seq,
                        double v, double a, double t0, double z=0,
                        double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
                        double a_prime=0, double kappa=0, double tc=.25,
-                       double dt=.002, double dx=.05, double v_scale=10, bool use_weibull_bound=false, double dur=.01, double isi=.1){
+                       double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1){
   
-  arma::ivec stimulus = get_stimulus(blink_seq, 1, dur, isi);
+  arma::ivec stimulus = get_stimulus(stim_seq, 1, dur, isi);
   arma::mat fpt_density = pulse_pmass_fpt(stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound);
   return fpt_density(rt/dt-1, abs(1-choice));
 }
@@ -192,7 +194,7 @@ double pulse_trial_lik(int choice, double rt, std::string blink_seq,
 //'
 //' @param choice integer; vector of decisions, 0 for lower boundary, 1 for upper
 //' @param rt numeric; vector of response times
-//' @param stimulus vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+//' @param stim_seq vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
 //' @param v numeric; drift rate, either single value or vector for each trial
 //' @param a numeric; initial boundary, either single value or vector for each trial
 //' @param t0 numeric; non-decision time, either single value or vector for each trial
@@ -208,21 +210,21 @@ double pulse_trial_lik(int choice, double rt, std::string blink_seq,
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 //' @param dt numeric; time step of simulation, default = .002
 //' @param dx numeric; size of evidence bins, default = .05
-//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 10
+//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
 //' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
 //' @param dur numeric; duration of stimulus
 //' @param isi numeric; interstimulus interval
 //' @param n_threads int; number of threads (trials) to run in parallel
 //'
-//' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+//' @return negative log likelihood of all choices and rts given pulse model parameters
 //'
 //' @export
 // [[Rcpp::export]]
-double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> blink_seq,
+double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> stim_seq,
                  arma::vec v, arma::vec a, arma::vec t0,
                  arma::vec z=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
                  arma::vec lambda=0, arma::vec a_prime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
-                 double dt=.002, double dx=.05, double v_scale=10, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
+                 double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
 
   omp_set_num_threads(n_threads);
   
@@ -264,7 +266,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> blink
 #pragma omp parallel for
   for(unsigned int i=0; i<choices.n_elem; i++){
     
-    double p_local = pulse_trial_lik(choices(i), rt(i), blink_seq[i],
+    double p_local = pulse_trial_lik(choices(i), rt(i), stim_seq[i],
                                      v(i), a(i), t0(i), z(i), sv(i), st0(i), sz(i), s(i),
                                      lambda(i), a_prime(i), kappa(i), tc(i),
                                      dt, dx, v_scale, use_weibull_bound, dur, isi);
@@ -281,3 +283,4 @@ double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> blink
     return -p_rt;
     
 }
+

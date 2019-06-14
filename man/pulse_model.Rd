@@ -11,6 +11,8 @@ pulse_model$new(dat, model_name)
 \arguments{
 \item{dat}{data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)}
 
+\item{stim_var}{string; name of stimulus column in dat, default = "blinkSequence"}
+
 \item{model_name}{string; name to identify model, default = "ddm"}
 
 \item{include}{character; vector of parameters to include in model. drift rate v, boundary a, and non-decision time t0 are included by default always. Can specify ddm parameters starting point z, drift rate variability sv, non decision time variability st0, starting point variability sz, and wiener diffusion noise s. Also can include collapsing bound parameters: degree of collapse a_prime (weibull only), slope of collapse kappa, time constant of collapse tc.}
@@ -26,8 +28,7 @@ pulse_model$new(dat, model_name)
 \item{use_weibull_bound}{logical: if T, use weibull function for collapsing bounds. Default = F}
 }
 \value{
-definition of base diffusion model object
-#'
+definition of pulse diffusion model object
 }
 \description{
 Pulse diffusion model object
