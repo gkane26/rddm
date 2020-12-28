@@ -91,28 +91,33 @@ init_pulse_model = function(dat, stim_var="blinkSequence", model_name="pdm", inc
   par_transform = par_transform[, -(1:rm_trans_par_cols)]
   
   self$par_names=par_names
-  self$obj=function(pars, dat=NULL, transform_pars=F, debug_lik=F, ...){
+  self$obj=function(pars, dat=NULL, transform_pars=F, check_constraints=T, debug=F, ...){
     
     if(is.null(dat)) dat = self$data
     
     #check params
     if(transform_pars)
       pars = private$logistic_untransform(pars)
-    private$set_params(pars)
-    if(!private$check_par_constraints()) return(1e10)
     
-    if(debug_lik){
+    if(debug){
       cat("pars = ")
       cat(pars, sep=", ")
       cat(" // ")
     }
     
+    private$set_params(pars)
+    if(check_constraints){
+      if(!private$check_par_constraints()){
+        if(debug)
+          cat("nll =", nll, "\n")
+        return(1e10)
+      }
+    }
+    
     # get likelihood
     nll = do.call(pulse_nll, c(list(choice=dat[,response]), list(rt=dat[, rt]), list(stim_seq=dat[[private$stim_var]]), as.list(private$par_matrix), use_weibull_bound=private$use_weibull_bound, ...))
     
-    if(is.infinite(nll)) browser()
-    if(is.na(nll)) browser()
-    if(debug_lik) cat("nll =", nll, "\n")
+    if(debug) cat("nll =", nll, "\n")
     
     nll
   }
