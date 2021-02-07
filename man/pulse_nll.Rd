@@ -4,11 +4,31 @@
 \alias{pulse_nll}
 \title{Get pulse model negative log likelihood for a set of trials}
 \usage{
-pulse_nll(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
-  sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L,
-  tc = 0L, check_pars = TRUE, dt = 0.002, dx = 0.05,
-  v_scale = 100, use_weibull_bound = FALSE, dur = 0.01, isi = 0.1,
-  n_threads = 1L)
+pulse_nll(
+  choices,
+  rt,
+  stim_seq,
+  v,
+  a,
+  t0,
+  z = 0L,
+  sv = 0L,
+  st0 = 0L,
+  sz = 0L,
+  s = 0L,
+  lambda = 0L,
+  aprime = 0L,
+  kappa = 0L,
+  tc = 0L,
+  check_pars = TRUE,
+  dt = 0.002,
+  dx = 0.05,
+  v_scale = 100,
+  use_weibull_bound = FALSE,
+  dur = 0.01,
+  isi = 0.1,
+  n_threads = 1L
+)
 }
 \arguments{
 \item{rt}{numeric; vector of response times}
@@ -33,7 +53,7 @@ pulse_nll(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
 
 \item{lambda}{numeric; O-U process slope, either single value or vector for each trial}
 
-\item{a_prime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
+\item{aprime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
 
 \item{kappa}{numeric; slope of collapse, either single value or vector for each trial, default = 0}
 

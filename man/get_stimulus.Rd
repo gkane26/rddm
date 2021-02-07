@@ -4,8 +4,7 @@
 \alias{get_stimulus}
 \title{Get pulse stimulus}
 \usage{
-get_stimulus(sequence, intensity = 1, dur = 0.01, isi = 0.1,
-  dt = 0.001)
+get_stimulus(sequence, intensity = 1, dur = 0.01, isi = 0.1, dt = 0.001)
 }
 \arguments{
 \item{sequence}{string; string of 0s, and 1s of stimulus values (0 is evidence to lower, 1 is evidence to upper)}

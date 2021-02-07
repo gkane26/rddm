@@ -4,10 +4,29 @@
 \alias{pulse_trial_lik}
 \title{Get pulse model likelihood for a given trial}
 \usage{
-pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0,
-  st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0,
-  tc = 0.25, dt = 0.002, dx = 0.05, v_scale = 100,
-  use_weibull_bound = FALSE, dur = 0.01, isi = 0.1)
+pulse_trial_lik(
+  choice,
+  rt,
+  stim_seq,
+  v,
+  a,
+  t0,
+  z = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  s = 1,
+  lambda = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  dt = 0.002,
+  dx = 0.05,
+  v_scale = 100,
+  use_weibull_bound = FALSE,
+  dur = 0.01,
+  isi = 0.1
+)
 }
 \arguments{
 \item{choice}{int; decision on trial, 0 for lower boundary, 1 for upper}
@@ -34,7 +53,7 @@ pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0,
 
 \item{lambda}{numeric; O-U process slope}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 0}
 

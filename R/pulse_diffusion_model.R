@@ -27,7 +27,7 @@ init_pulse_model = function(dat, stim_var="blinkSequence", model_name="pdm", inc
   }
   
   # set default parameter values
-  all_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "lambda", "a_prime", "kappa", "tc", "s")
+  all_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
   values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, .25, 1)
   lower = c(-10, .01, 1e-10, .2, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
   upper = c(10, 10, 1, .8, 10, .2, .2, 1, 1, 5, 2, 5)
@@ -146,7 +146,7 @@ check_par_constraints <- function(){
   checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
   checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
   checks = checks + sum(private$par_matrix[, (lambda < -1) & (lambda > 1)]) # lambda
-  checks = checks + sum(private$par_matrix[, (a_prime < 0) & (a_prime > 1)]) # a_prime
+  checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
   checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
   checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
   checks = checks + sum(private$par_matrix[, s <= 0]) # s
@@ -160,7 +160,7 @@ check_par_constraints <- function(){
 #' @param dat data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)
 #' @param stim_var string; name of stimulus column in dat, default = "blinkSequence"
 #' @param model_name string; name to identify model, default = "ddm"
-#' @param include character; vector of parameters to include in model. drift rate v, boundary a, and non-decision time t0 are included by default always. Can specify ddm parameters starting point z, drift rate variability sv, non decision time variability st0, starting point variability sz, and wiener diffusion noise s. Also can include collapsing bound parameters: degree of collapse a_prime (weibull only), slope of collapse kappa, time constant of collapse tc.
+#' @param include character; vector of parameters to include in model. drift rate v, boundary a, and non-decision time t0 are included by default always. Can specify ddm parameters starting point z, drift rate variability sv, non decision time variability st0, starting point variability sz, and wiener diffusion noise s. Also can include collapsing bound parameters: degree of collapse aprime (weibull only), slope of collapse kappa, time constant of collapse tc.
 #' @param depends_on named character; if a parameter value depends on a task condition, for example drift rate depends on task difficulty, specify here: c("v" = "task difficulty"). Can specify multiple dependent parameters as a vector
 #' @param start_values named numeric; to change default starting parameter values, specify as named vector. E.g. c("v"=2, "a"=3) to set drift rate to 2 and boundary to 3
 #' @param fixed_pars named numeric; to fix a parameter at a specified value, use a named vector as with start_values

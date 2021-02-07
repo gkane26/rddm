@@ -4,10 +4,27 @@
 \alias{ddm_integral_fpt}
 \title{Simulate drift diffusion model with fixed or collapsing boundary}
 \usage{
-ddm_integral_fpt(v, a, t0, z = 0.5, sv = 0, sz = 0, st0 = 0,
-  a_prime = 0, kappa = 0, tc = 0.25, s = 1, sv_points = 19,
-  sz_points = 11, st0_points = 11, dt = 0.01, max_time = 10,
-  use_weibull_bound = FALSE, n_threads = 1L)
+ddm_integral_fpt(
+  v,
+  a,
+  t0,
+  z = 0.5,
+  dc = 0,
+  sv = 0,
+  sz = 0,
+  st0 = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  s = 1,
+  sv_points = 19,
+  sz_points = 11,
+  st0_points = 11,
+  dt = 0.01,
+  max_time = 10,
+  use_weibull_bound = FALSE,
+  n_threads = 1L
+)
 }
 \arguments{
 \item{v}{numeric; drift rate}
@@ -18,13 +35,15 @@ ddm_integral_fpt(v, a, t0, z = 0.5, sv = 0, sz = 0, st0 = 0,
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
+
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
 \item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 0}
 

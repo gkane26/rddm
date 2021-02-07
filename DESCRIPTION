@@ -12,9 +12,15 @@ Imports:
     R6,
     rtdists,
     data.table,
-    optimx
+    modelfitr,
+    parallel,
+    foreach,
+    doParallel
+Remotes:
+    github::gkane26/modelfitr
 LinkingTo:
     Rcpp,
     RcppArmadillo
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Encoding: UTF-8
+Roxygen: list(r6 = FALSE)

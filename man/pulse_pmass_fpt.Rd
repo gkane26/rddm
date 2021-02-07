@@ -4,9 +4,25 @@
 \alias{pulse_pmass_fpt}
 \title{Get first passage time distribution of pulse diffusion model by simulating probability mass}
 \usage{
-pulse_pmass_fpt(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0,
-  s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = 0.25,
-  dt = 0.002, dx = 0.05, v_scale = 100, use_weibull_bound = FALSE)
+pulse_pmass_fpt(
+  stimulus,
+  v,
+  a,
+  t0,
+  z = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  s = 1,
+  lambda = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  dt = 0.002,
+  dx = 0.05,
+  v_scale = 100,
+  use_weibull_bound = FALSE
+)
 }
 \arguments{
 \item{stimulus}{integer vector; stimulus to simulate (1 for evidence to upper boundary, -1 to lower boundary, 0 for no evidence)}
@@ -29,7 +45,7 @@ pulse_pmass_fpt(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0,
 
 \item{lambda}{numeric; O-U process slope}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 0}
 

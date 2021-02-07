@@ -55,10 +55,11 @@ arma::vec kernel_function_vec(double x, double t, arma::vec y, double tau, doubl
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
 //' @param z numeric; starting point, 0 < z < 1, default = .5
+//' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
 //' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
-//' @param a_prime numeric; degree of collapse, default = 0
+//' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
@@ -74,9 +75,9 @@ arma::vec kernel_function_vec(double x, double t, arma::vec y, double tau, doubl
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat ddm_integral_fpt(const double v, const double a, double t0, double z=.5,
-                       const double sv=0, const double sz=0, const double st0=0,
-                       const double a_prime=0, const double kappa=0, const double tc=.25, double s=1,
+arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc=0,
+                       double sv=0, double sz=0, double st0=0,
+                       double aprime=0, double kappa=0, double tc=.25, double s=1,
                        double sv_points=19, double sz_points=11, double st0_points=11,
                        double dt=.01, double max_time=10, bool use_weibull_bound=false, int n_threads=1){
   
@@ -85,6 +86,7 @@ arma::mat ddm_integral_fpt(const double v, const double a, double t0, double z=.
   int nBins = round(max_time / dt)+1;
   
   arma::vec v_vec, p_v, z_vec;
+  v += dc;
   if(sv==0){
     v_vec = v;
     p_v = 1;
@@ -101,7 +103,7 @@ arma::mat ddm_integral_fpt(const double v, const double a, double t0, double z=.
   
   arma::vec bound;
   if(use_weibull_bound)
-    bound = weibull_bound(arma::regspace(dt, dt, max_time+dt), a, a_prime, kappa, tc);
+    bound = weibull_bound(arma::regspace(dt, dt, max_time+dt), a, aprime, kappa, tc);
   else
     bound = hyperbolic_ratio_bound(arma::regspace(dt, dt, max_time+dt), a, kappa, tc);
   

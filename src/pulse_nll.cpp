@@ -51,7 +51,7 @@ arma::ivec get_stimulus(std::string sequence, double intensity=1, double dur=0.0
 //' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 //' @param lambda numeric; O-U process slope
-//' @param a_prime numeric; degree of collapse, default = 0
+//' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param dt numeric; time step of simulation, default = .002
@@ -65,7 +65,7 @@ arma::ivec get_stimulus(std::string sequence, double intensity=1, double dur=0.0
 // [[Rcpp::export]]
 arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, double z=0,
                       double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
-                      double a_prime=0, double kappa=0, double tc=.25,
+                      double aprime=0, double kappa=0, double tc=.25,
                       double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false){
 
   // make bins
@@ -93,7 +93,7 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
   // get boundary vector
   arma::vec bound;
   if(use_weibull_bound)
-    bound = weibull_bound(arma::regspace(dt, dt, stimulus.n_elem*dt+dt), a, a_prime, kappa, tc);
+    bound = weibull_bound(arma::regspace(dt, dt, stimulus.n_elem*dt+dt), a, aprime, kappa, tc);
   else
     bound = hyperbolic_ratio_bound(arma::regspace(dt, dt, stimulus.n_elem*dt+dt), a, kappa, tc);
 
@@ -164,7 +164,7 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
 //' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 //' @param lambda numeric; O-U process slope
-//' @param a_prime numeric; degree of collapse, default = 0
+//' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
 //' @param dt numeric; time step of simulation, default = .002
@@ -181,11 +181,11 @@ arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, do
 double pulse_trial_lik(int choice, double rt, std::string stim_seq,
                        double v, double a, double t0, double z=0,
                        double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
-                       double a_prime=0, double kappa=0, double tc=.25,
+                       double aprime=0, double kappa=0, double tc=.25,
                        double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1){
   
   arma::ivec stimulus = get_stimulus(stim_seq, 1, dur, isi);
-  arma::mat fpt_density = pulse_pmass_fpt(stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound);
+  arma::mat fpt_density = pulse_pmass_fpt(stimulus, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, v_scale, use_weibull_bound);
   return fpt_density(rt/dt-1, abs(1-choice));
 }
 
@@ -204,7 +204,7 @@ double pulse_trial_lik(int choice, double rt, std::string stim_seq,
 //' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 //' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1
 //' @param lambda numeric; O-U process slope, either single value or vector for each trial
-//' @param a_prime numeric; degree of collapse, either single value or vector for each trial, default = 0
+//' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 //' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 //' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
@@ -223,7 +223,7 @@ double pulse_trial_lik(int choice, double rt, std::string stim_seq,
 double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> stim_seq,
                  arma::vec v, arma::vec a, arma::vec t0,
                  arma::vec z=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
-                 arma::vec lambda=0, arma::vec a_prime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
+                 arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
                  double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
 
   omp_set_num_threads(n_threads);
@@ -251,8 +251,8 @@ double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> stim_
       s = arma::zeros(choices.n_elem)+s(0);
     if(lambda.n_elem != choices.n_elem)
       lambda = arma::zeros(choices.n_elem)+lambda(0);
-    if(a_prime.n_elem != choices.n_elem)
-      a_prime = arma::zeros(choices.n_elem)+a_prime(0);
+    if(aprime.n_elem != choices.n_elem)
+      aprime = arma::zeros(choices.n_elem)+aprime(0);
     if(kappa.n_elem != choices.n_elem)
       kappa = arma::zeros(choices.n_elem)+kappa(0);
     if(tc.n_elem != choices.n_elem)
@@ -268,7 +268,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> stim_
     
     double p_local = pulse_trial_lik(choices(i), rt(i), stim_seq[i],
                                      v(i), a(i), t0(i), z(i), sv(i), st0(i), sz(i), s(i),
-                                     lambda(i), a_prime(i), kappa(i), tc(i),
+                                     lambda(i), aprime(i), kappa(i), tc(i),
                                      dt, dx, v_scale, use_weibull_bound, dur, isi);
 
     if(p_local<1e-10)

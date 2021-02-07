@@ -24,7 +24,7 @@ using namespace Rcpp;
 //' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 //' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1
 //' @param lambda numeric; O-U process slope, either single value or vector for each trial
-//' @param a_prime numeric; degree of collapse, either single value or vector for each trial, default = 0
+//' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 //' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 //' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
@@ -41,8 +41,8 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
                         arma::vec v, arma::vec a, arma::vec t0,
-                        arma::vec z=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
-                        arma::vec lambda=0, arma::vec a_prime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
+                        arma::vec z=0, arma::vec d=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
+                        arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
                         double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
   
   // check parameter vectors
@@ -58,7 +58,9 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
     if(t0.n_elem != stim_length)
       t0 = arma::zeros(stim_length)+t0(0);
     if(z.n_elem != stim_length)
-      z = arma::zeros(stim_length)+.5;
+      z = arma::zeros(stim_length)+z(0);
+    if(d.n_elem != stim_length)
+      d = arma::zeros(stim_length) + d(0);
     if(sv.n_elem != stim_length)
       sv = arma::zeros(stim_length)+sv(0);
     if(sz.n_elem != stim_length)
@@ -69,8 +71,8 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
       s = arma::zeros(stim_length)+s(0);
     if(lambda.n_elem != stim_length)
       lambda = arma::zeros(stim_length)+lambda(0);
-    if(a_prime.n_elem != stim_length)
-      a_prime = arma::zeros(stim_length)+a_prime(0);
+    if(aprime.n_elem != stim_length)
+      aprime = arma::zeros(stim_length)+aprime(0);
     if(kappa.n_elem != stim_length)
       kappa = arma::zeros(stim_length)+kappa(0);
     if(tc.n_elem != stim_length)
@@ -82,8 +84,9 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
   
   for(unsigned int i=0; i<stim_length; i++){
     arma::ivec this_stim = get_stimulus(stim_seq[i], dur, isi);
-    DataFrame this_sim = sim_pulse(n, this_stim, v(i), a(i), t0(i), z(i), sv(i), st0(i), sz(i), s(i),
-                                   lambda(i), a_prime(i), kappa(i), tc(i),
+    arma::ivec down_stim = arma::zeros<arma::ivec>(this_stim.n_elem);
+    DataFrame this_sim = sim_pulse(n, this_stim, down_stim, v(i), a(i), t0(i), z(i), d(i), sv(i), st0(i), sz(i), s(i),
+                                   lambda(i), aprime(i), kappa(i), tc(i),
                                    dt, v_scale, use_weibull_bound, n_threads);
     
     choices.subvec(i*n,i*n+n-1) = as<arma::ivec>(this_sim[0]);

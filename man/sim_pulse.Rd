@@ -4,15 +4,35 @@
 \alias{sim_pulse}
 \title{Simulate drift diffusion model with fixed or collapsing boundary}
 \usage{
-sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
-  s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = 0.25,
-  dt = 0.001, v_scale = 100, use_weibull_bound = FALSE,
-  n_threads = 1L)
+sim_pulse(
+  n,
+  up_stimulus,
+  down_stimulus,
+  v,
+  a,
+  t0,
+  z = 0.5,
+  d = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  s = 1,
+  lambda = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  dt = 0.001,
+  v_scale = 100,
+  use_weibull_bound = FALSE,
+  n_threads = 1L
+)
 }
 \arguments{
 \item{n}{integer; number of decisions to simulate}
 
-\item{stimulus}{integer vector; stimulus to simulate (1 for evidence to upper boundary, -1 to lower boundary, 0 for no evidence)}
+\item{up_stimulus}{float vector; stimulus to the positive boundary}
+
+\item{down_stimulus}{float vector; stimulus to the negative boundary}
 
 \item{v}{numeric; drift rate}
 
@@ -21,6 +41,8 @@ sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 \item{t0}{numeric; non-decision time}
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
+
+\item{d}{numeric; drift criterion, upper drift = v, lower drift = v-d}
 
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
@@ -32,7 +54,7 @@ sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 
 \item{lambda}{numeric; O-U process slope}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 1}
 

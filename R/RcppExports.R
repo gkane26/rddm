@@ -6,12 +6,15 @@
 #' @description evaluate diffusion model boundary using the hyperbolic ratio or weibull functions
 #'
 #' @param t vector; time points to evaluate boundary
-#' @param a numeric; initial boundary
-#' @param a_prime numeric; degree of collapse (weibull only)
-#' @param kappa numeric; slope of collapse
-#' @param tc numeric; time constant of collapse
+#' @param a numeric or vector; initial boundary
+#' @param aprime numeric or vector; degree of collapse (weibull only)
+#' @param kappa numeric or vector; slope of collapse
+#' @param tc numeric or vector; time constant of collapse
 #' 
-#' @return boundary at time t
+#' @return 
+#' column vector with boundary at time t, 
+#' or a time point x parameter vector matrix of boundaries 
+#' (each column represents a time varying boundary for a given parameter set)
 #' 
 #' @name bounds
 NULL
@@ -24,8 +27,20 @@ hyperbolic_ratio_bound <- function(t, a, kappa = 0, tc = .25) {
 
 #' @rdname bounds
 #' @export
-weibull_bound <- function(t, a, a_prime = 0, kappa = 1, tc = .25) {
-    .Call('_rddm_weibull_bound', PACKAGE = 'rddm', t, a, a_prime, kappa, tc)
+hyperbolic_ratio_bound_vec <- function(t, a, kappa = 0L, tc = 0L, check_pars = TRUE) {
+    .Call('_rddm_hyperbolic_ratio_bound_vec', PACKAGE = 'rddm', t, a, kappa, tc, check_pars)
+}
+
+#' @rdname bounds
+#' @export
+weibull_bound <- function(t, a, aprime = 0, kappa = 1, tc = .25) {
+    .Call('_rddm_weibull_bound', PACKAGE = 'rddm', t, a, aprime, kappa, tc)
+}
+
+#' @rdname bounds
+#' @export
+weibull_bound_vec <- function(t, a, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE) {
+    .Call('_rddm_weibull_bound_vec', PACKAGE = 'rddm', t, a, aprime, kappa, tc, check_pars)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -34,10 +49,11 @@ weibull_bound <- function(t, a, a_prime = 0, kappa = 1, tc = .25) {
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param z numeric; starting point, 0 < z < 1, default = .5
+#' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
 #' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
-#' @param a_prime numeric; degree of collapse, default = 0
+#' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
@@ -52,8 +68,8 @@ weibull_bound <- function(t, a, a_prime = 0, kappa = 1, tc = .25) {
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
 #' @export
-ddm_integral_fpt <- function(v, a, t0, z = .5, sv = 0, sz = 0, st0 = 0, a_prime = 0, kappa = 0, tc = .25, s = 1, sv_points = 19, sz_points = 11, st0_points = 11, dt = .01, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
-    .Call('_rddm_ddm_integral_fpt', PACKAGE = 'rddm', v, a, t0, z, sv, sz, st0, a_prime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, use_weibull_bound, n_threads)
+ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, aprime = 0, kappa = 0, tc = .25, s = 1, sv_points = 19, sz_points = 11, st0_points = 11, dt = .01, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
+    .Call('_rddm_ddm_integral_fpt', PACKAGE = 'rddm', v, a, t0, z, dc, sv, sz, st0, aprime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, use_weibull_bound, n_threads)
 }
 
 #' Get pulse stimulus
@@ -85,7 +101,7 @@ get_stimulus <- function(sequence, intensity = 1, dur = 0.01, isi = 0.1, dt = 0.
 #' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param lambda numeric; O-U process slope
-#' @param a_prime numeric; degree of collapse, default = 0
+#' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .002
@@ -96,8 +112,8 @@ get_stimulus <- function(sequence, intensity = 1, dur = 0.01, isi = 0.1, dt = 0.
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE) {
-    .Call('_rddm_pulse_pmass_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound)
+pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE) {
+    .Call('_rddm_pulse_pmass_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, v_scale, use_weibull_bound)
 }
 
 #' Get pulse model likelihood for a given trial
@@ -114,7 +130,7 @@ pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, 
 #' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param lambda numeric; O-U process slope
-#' @param a_prime numeric; degree of collapse, default = 0
+#' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .002
@@ -127,8 +143,8 @@ pulse_pmass_fpt <- function(stimulus, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, 
 #' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1) {
-    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, dx, v_scale, use_weibull_bound, dur, isi)
+pulse_trial_lik <- function(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1) {
+    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, v_scale, use_weibull_bound, dur, isi)
 }
 
 #' Get pulse model negative log likelihood for a set of trials
@@ -145,7 +161,7 @@ pulse_trial_lik <- function(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0, st0 =
 #' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1
 #' @param lambda numeric; O-U process slope, either single value or vector for each trial
-#' @param a_prime numeric; degree of collapse, either single value or vector for each trial, default = 0
+#' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 #' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 #' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 #' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
@@ -160,8 +176,8 @@ pulse_trial_lik <- function(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0, st0 =
 #' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
-    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
+pulse_nll <- function(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
+    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
 }
 
 #' Get predicted behavior from pulse model
@@ -177,7 +193,7 @@ pulse_nll <- function(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L
 #' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1
 #' @param lambda numeric; O-U process slope, either single value or vector for each trial
-#' @param a_prime numeric; degree of collapse, either single value or vector for each trial, default = 0
+#' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 #' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 #' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 #' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
@@ -191,8 +207,8 @@ pulse_nll <- function(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), response time
 #'
 #' @export
-pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
-    .Call('_rddm_pulse_predict', PACKAGE = 'rddm', n, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
+pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, d = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .002, dx = .05, v_scale = 100, use_weibull_bound = FALSE, dur = .01, isi = .1, n_threads = 1L) {
+    .Call('_rddm_pulse_predict', PACKAGE = 'rddm', n, stim_seq, v, a, t0, z, d, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -202,10 +218,11 @@ pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz =
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param z numeric; starting point, 0 < z < 1, default = .5
+#' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
 #' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
-#' @param a_prime numeric; degree of collapse, default = 0
+#' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
@@ -217,24 +234,53 @@ pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L, sz =
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
 #' @export
-sim_ddm <- function(n, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, a_prime = 0, kappa = 0, tc = .25, s = 1, dt = .001, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
-    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, sv, st0, sz, a_prime, kappa, tc, s, dt, max_time, use_weibull_bound, n_threads)
+sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime = 0, kappa = 0, tc = .25, s = 1, dt = .001, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
+    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, n_threads)
+}
+
+#' Simulate drift diffusion model with fixed or collapsing boundary
+#'
+#' @param v vector; drift rate
+#' @param a vector; initial boundary
+#' @param t0 vector; non-decision time
+#' @param z vector; starting point, 0 < z < 1, default = .5
+#' @param dc vector; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
+#' @param sv vector; standard deviation of variability in drift rate, sv >= 0, default = 0
+#' @param st0 vector; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
+#' @param sz vector; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param aprime vector; degree of collapse, default = 0
+#' @param kappa vector; slope of collapse, default = 0
+#' @param tc vector; time constant of collapse, default = .25
+#' @param s numeric; standard deviation in wiener diffusion noise, default = 1
+#' @param dt numeric; time step of simulation, default = .001
+#' @param max_time numeric; max time of simulation, default = 10
+#' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+#' @param check_pars bool; if True (default) check parameter vector lengths and default values
+#' @param n_threads integer; number of threads to run in parallel, default = 1
+#'
+#' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
+#'
+#' @export
+sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, aprime = 0L, kappa = 0L, tc = 0L, s = 1, dt = .001, max_time = 10, use_weibull_bound = FALSE, check_pars = TRUE, n_threads = 1L) {
+    .Call('_rddm_sim_ddm_vec', PACKAGE = 'rddm', v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, check_pars, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
 #'
 #' @param n integer; number of decisions to simulate
-#' @param stimulus integer vector; stimulus to simulate (1 for evidence to upper boundary, -1 to lower boundary, 0 for no evidence)
+#' @param up_stimulus float vector; stimulus to the positive boundary 
+#' @param down_stimulus float vector; stimulus to the negative boundary
 #' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param z numeric; starting point, 0 < z < 1, default = .5
+#' @param d numeric; drift criterion, upper drift = v, lower drift = v-d
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
 #' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param lambda numeric; O-U process slope
-#' @param a_prime numeric; degree of collapse, default = 0
+#' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 1
 #' @param tc numeric; time constant of collapse, default = .25
 #' @param dt numeric; time step of simulation, default = .001
@@ -245,7 +291,7 @@ sim_ddm <- function(n, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, a_prime = 0, k
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #' 
 #' @export
-sim_pulse <- function(n, stimulus, v, a, t0, z = .5, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = .25, dt = .001, v_scale = 100, use_weibull_bound = FALSE, n_threads = 1L) {
-    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimulus, v, a, t0, z, sv, st0, sz, s, lambda, a_prime, kappa, tc, dt, v_scale, use_weibull_bound, n_threads)
+sim_pulse <- function(n, up_stimulus, down_stimulus, v, a, t0, z = .5, d = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, v_scale = 100, use_weibull_bound = FALSE, n_threads = 1L) {
+    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, up_stimulus, down_stimulus, v, a, t0, z, d, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, v_scale, use_weibull_bound, n_threads)
 }
 
