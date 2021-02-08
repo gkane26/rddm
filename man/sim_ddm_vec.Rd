@@ -19,7 +19,7 @@ sim_ddm_vec(
   s = 1,
   dt = 0.001,
   max_time = 10,
-  use_weibull_bound = FALSE,
+  bounds = 0L,
   check_pars = TRUE,
   n_threads = 1L
 )
@@ -53,7 +53,7 @@ sim_ddm_vec(
 
 \item{max_time}{numeric; max time of simulation, default = 10}
 
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
 
 \item{check_pars}{bool; if True (default) check parameter vector lengths and default values}
 

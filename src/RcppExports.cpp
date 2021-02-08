@@ -67,8 +67,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // ddm_integral_fpt
-arma::mat ddm_integral_fpt(double v, double a, double t0, double z, double dc, double sv, double sz, double st0, double aprime, double kappa, double tc, double s, double sv_points, double sz_points, double st0_points, double dt, double max_time, bool use_weibull_bound, int n_threads);
-RcppExport SEXP _rddm_ddm_integral_fpt(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP szSEXP, SEXP st0SEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP sv_pointsSEXP, SEXP sz_pointsSEXP, SEXP st0_pointsSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP use_weibull_boundSEXP, SEXP n_threadsSEXP) {
+arma::mat ddm_integral_fpt(double v, double a, double t0, double z, double dc, double sv, double sz, double st0, double aprime, double kappa, double tc, double s, double sv_points, double sz_points, double st0_points, double dt, double max_time, int bounds, int n_threads);
+RcppExport SEXP _rddm_ddm_integral_fpt(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP szSEXP, SEXP st0SEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP sv_pointsSEXP, SEXP sz_pointsSEXP, SEXP st0_pointsSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP boundsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -89,9 +89,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type st0_points(st0_pointsSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type max_time(max_timeSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(ddm_integral_fpt(v, a, t0, z, dc, sv, sz, st0, aprime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, use_weibull_bound, n_threads));
+    rcpp_result_gen = Rcpp::wrap(ddm_integral_fpt(v, a, t0, z, dc, sv, sz, st0, aprime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, bounds, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -235,8 +235,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sim_ddm
-DataFrame sim_ddm(int n, double v, double a, double t0, double z, double dc, double sv, double st0, double sz, double aprime, double kappa, double tc, double s, double dt, double max_time, bool use_weibull_bound, int n_threads);
-RcppExport SEXP _rddm_sim_ddm(SEXP nSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP use_weibull_boundSEXP, SEXP n_threadsSEXP) {
+DataFrame sim_ddm(int n, double v, double a, double t0, double z, double dc, double sv, double st0, double sz, double aprime, double kappa, double tc, double s, double dt, double max_time, int bounds, int n_threads);
+RcppExport SEXP _rddm_sim_ddm(SEXP nSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP boundsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -255,15 +255,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type s(sSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type max_time(max_timeSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sim_ddm(n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, n_threads));
+    rcpp_result_gen = Rcpp::wrap(sim_ddm(n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
 // sim_ddm_vec
-DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec aprime, arma::vec kappa, arma::vec tc, double s, double dt, double max_time, bool use_weibull_bound, bool check_pars, int n_threads);
-RcppExport SEXP _rddm_sim_ddm_vec(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP use_weibull_boundSEXP, SEXP check_parsSEXP, SEXP n_threadsSEXP) {
+DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec aprime, arma::vec kappa, arma::vec tc, double s, double dt, double max_time, int bounds, bool check_pars, int n_threads);
+RcppExport SEXP _rddm_sim_ddm_vec(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP boundsSEXP, SEXP check_parsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -281,10 +281,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type s(sSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type max_time(max_timeSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
     Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sim_ddm_vec(v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, check_pars, n_threads));
+    rcpp_result_gen = Rcpp::wrap(sim_ddm_vec(v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, check_pars, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }

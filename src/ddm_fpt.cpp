@@ -68,7 +68,7 @@ arma::vec kernel_function_vec(double x, double t, arma::vec y, double tau, doubl
 //' @param st0_points integer; number of points to approximate integral over non-decision time variability, default = 11
 //' @param dt numeric; time step of simulation, default = .01
 //' @param max_time numeric; max time of simulation, default = 10
-//' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' 
 //' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
@@ -79,7 +79,7 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
                        double sv=0, double sz=0, double st0=0,
                        double aprime=0, double kappa=0, double tc=.25, double s=1,
                        double sv_points=19, double sz_points=11, double st0_points=11,
-                       double dt=.01, double max_time=10, bool use_weibull_bound=false, int n_threads=1){
+                       double dt=.01, double max_time=10, int bounds=0, int n_threads=1){
   
   t0 = round(t0/dt)*dt;
   z = (2*z-1)*a/2;
@@ -101,11 +101,15 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
   else
     z_vec = arma::linspace(z-sz/2, z+sz/2, sz_points);
   
+  arma::vec tvec = arma::regspace(dt, dt, max_time+dt);
   arma::vec bound;
-  if(use_weibull_bound)
-    bound = weibull_bound(arma::regspace(dt, dt, max_time+dt), a, aprime, kappa, tc);
-  else
-    bound = hyperbolic_ratio_bound(arma::regspace(dt, dt, max_time+dt), a, kappa, tc);
+  if(bounds == 2){
+    bound = weibull_bound(tvec, a, aprime, kappa, tc);
+  }else if(bounds == 1){
+    bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+  } else {
+    bound = rep(a, tvec.n_elem); 
+  }
   
   arma::mat density_shared = arma::zeros(nBins, 2);
   

@@ -62,14 +62,14 @@ weibull_bound_vec <- function(t, a, aprime = 0L, kappa = 0L, tc = 0L, check_pars
 #' @param st0_points integer; number of points to approximate integral over non-decision time variability, default = 11
 #' @param dt numeric; time step of simulation, default = .01
 #' @param max_time numeric; max time of simulation, default = 10
-#' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+#' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' 
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
 #' @export
-ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, aprime = 0, kappa = 0, tc = .25, s = 1, sv_points = 19, sz_points = 11, st0_points = 11, dt = .01, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
-    .Call('_rddm_ddm_integral_fpt', PACKAGE = 'rddm', v, a, t0, z, dc, sv, sz, st0, aprime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, use_weibull_bound, n_threads)
+ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, aprime = 0, kappa = 0, tc = .25, s = 1, sv_points = 19, sz_points = 11, st0_points = 11, dt = .01, max_time = 10, bounds = 0L, n_threads = 1L) {
+    .Call('_rddm_ddm_integral_fpt', PACKAGE = 'rddm', v, a, t0, z, dc, sv, sz, st0, aprime, kappa, tc, s, sv_points, sz_points, st0_points, dt, max_time, bounds, n_threads)
 }
 
 #' Get pulse stimulus
@@ -228,14 +228,14 @@ pulse_predict <- function(n, stim_seq, v, a, t0, z = 0L, d = 0L, sv = 0L, st0 = 
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param dt numeric; time step of simulation, default = .001
 #' @param max_time numeric; max time of simulation, default = 10
-#' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+#' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' 
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
 #' @export
-sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime = 0, kappa = 0, tc = .25, s = 1, dt = .001, max_time = 10, use_weibull_bound = FALSE, n_threads = 1L) {
-    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, n_threads)
+sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime = 0, kappa = 0, tc = .25, s = 1, dt = .001, max_time = 10, bounds = 0L, n_threads = 1L) {
+    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -254,15 +254,15 @@ sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param dt numeric; time step of simulation, default = .001
 #' @param max_time numeric; max time of simulation, default = 10
-#' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+#' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 #' @param check_pars bool; if True (default) check parameter vector lengths and default values
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #'
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #'
 #' @export
-sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, aprime = 0L, kappa = 0L, tc = 0L, s = 1, dt = .001, max_time = 10, use_weibull_bound = FALSE, check_pars = TRUE, n_threads = 1L) {
-    .Call('_rddm_sim_ddm_vec', PACKAGE = 'rddm', v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, use_weibull_bound, check_pars, n_threads)
+sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, aprime = 0L, kappa = 0L, tc = 0L, s = 1, dt = .001, max_time = 10, bounds = 0L, check_pars = TRUE, n_threads = 1L) {
+    .Call('_rddm_sim_ddm_vec', PACKAGE = 'rddm', v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, check_pars, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary

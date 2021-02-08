@@ -55,7 +55,7 @@ arma::mat hyperbolic_ratio_bound_vec(arma::vec t, arma::vec a, arma::vec kappa=0
   }
   
   arma::mat bmat(t.n_elem, a.n_elem);
-  for (int i=0; i < a.n_elem; i++) {
+  for (unsigned int i=0; i < a.n_elem; i++) {
     bmat.col(i) = a(i) / 2 * (1 - kappa(i) * (t / (t + tc(i))));
   }
 
@@ -98,7 +98,7 @@ arma::mat weibull_bound_vec(arma::vec t, arma::vec a, arma::vec aprime=0, arma::
   }
   
   arma::mat bmat(t.n_elem, a.n_elem);
-  for (int i=0; i < a.n_elem; i++) {
+  for (unsigned int i=0; i < a.n_elem; i++) {
     bmat.col(i) = a(i) / 2 - (1 - exp(-1 * arma::pow(t / tc(i), kappa(i)))) * (a(i) / 2 * aprime(i));
   }
 

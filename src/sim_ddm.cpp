@@ -23,7 +23,7 @@ using namespace Rcpp;
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 //' @param dt numeric; time step of simulation, default = .001
 //' @param max_time numeric; max time of simulation, default = 10
-//' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' 
 //' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
@@ -33,7 +33,7 @@ using namespace Rcpp;
 DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
                   double sv=0, double st0=0, double sz=0,
                   double aprime=0, double kappa=0, double tc=.25,
-                  double s=1, double dt=.001, double max_time=10, bool use_weibull_bound=false, int n_threads=1){
+                  double s=1, double dt=.001, double max_time=10, int bounds=0, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   int n_on_thread = n / n_threads;
@@ -43,10 +43,12 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
   
   arma::vec tvec = arma::regspace(dt, dt, max_time),
     bound;
-  if(use_weibull_bound){
+  if (bounds == 2){
     bound = weibull_bound(tvec, a, aprime, kappa, tc);
-  }else{
+  }else if (bounds == 1){
     bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+  } else {
+    bound = rep(a, tvec.n_elem);
   }
   
   double dW = s*sqrt(dt);
@@ -102,7 +104,7 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 //' @param dt numeric; time step of simulation, default = .001
 //' @param max_time numeric; max time of simulation, default = 10
-//' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
+//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param check_pars bool; if True (default) check parameter vector lengths and default values
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //'
@@ -114,7 +116,7 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
                       arma::vec sv=0, arma::vec st0=0, arma::vec sz=0,
                       arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0,
                       double s=1, double dt=.001, double max_time=10,
-                      bool use_weibull_bound=false, bool check_pars=true, int n_threads=1){
+                      int bounds=0, bool check_pars=true, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   
@@ -168,10 +170,12 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
   
   arma::vec tvec = arma::regspace(dt, dt, max_time);
   arma::mat bound;
-  if(use_weibull_bound){
+  if(bounds == 2){
     bound = weibull_bound_vec(tvec, a, aprime, kappa, tc);
-  }else{
+  }else if(bounds == 1){
     bound = hyperbolic_ratio_bound_vec(tvec, a, kappa, tc);
+  } else {
+    bound.each_row() = a;
   }
   
   double dW = s*sqrt(dt);

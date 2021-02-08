@@ -117,7 +117,7 @@ set_objective <- function(objective=NULL) {
   
 }
 
-init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, use_weibull_bound=T, objective=NULL, ...){
+init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...){
   
   super$initialize(dat, model_name)
   
@@ -156,9 +156,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
   
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "st0", "sz", "aprime", "kappa", "tc")
-  values = c(1, 1.5, .3, .5, 0, 0, 0, 0, 0, 1, .25)
-  lower = c(-10, 1, .25, .2, -10, 0, 0, 0, 0, 0, 0)
-  upper = c(10, 10, 1, .8, 10, 1, .25, .2, 1, 5, 2)
+  values = c(1, 1.5, .3, .5, 0, 0, 0, 0, 0.25, 1, 0.25)
+  lower = c(-10, 0, 0, .2, -10, 0, 0, 0, 0, 0, 0)
+  upper = c(10, 10, 1, .8, 10, 1, .25, .2, 1, 10, 2)
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
@@ -256,20 +256,45 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
   private$fixed=fixed_pars
   private$par_transform=par_transform
   private$sim_cond=simulate_conditions
-  private$use_weibull_bound=use_weibull_bound
+  
+  if (is.null(bounds)) {
+    if("aprime" %in% par_corresponding) {
+      private$bounds = 2L
+    } else if (any(c("kappa", "tc") %in% par_corresponding)) {
+      private$bounds = 1L
+    } else {
+      private$bounds = 0L
+    }
+  } else {
+    if (!bounds %in% c("fixed", "hyperbolic", "weibull")) {
+      warning("specified bounds not supported, using fixed bounds.")
+      private$bounds = 0L
+    } else {
+      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull"))) - 1
+    }
+    
+  }
   
 }
 
 check_par_constraints <- function(){
+  par_matrix_names = names(private$par_matrix)
   checks = sum(private$par_matrix[, a <= 0]) # a
   checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
-  checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
-  checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
-  checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
-  checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
-  checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
-  checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
-  checks = checks + sum(private$par_matrix[, s <= 0]) # s
+  if ("z" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
+  if ("sz" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
+  if ("st0" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
+  if ("aprime"  %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
+  if ("kappa" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
+  if ("tc" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
+  if ("s" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, s <= 0]) # s
   return(checks == 0)
 }
 
@@ -307,7 +332,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
                                     as.list(pars_only_mat[i]),
                                     as.list(private$fixed),
                                     max_time=private$max_time,
-                                    use_weibull_bound=private$use_weibull_bound,
+                                    bounds=private$bounds,
                                     ...))
       
       all_sim = rbind(all_sim, data.table(private$par_matrix[i, 1:length(private$sim_cond)], this_sim))
@@ -325,7 +350,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
       this_sim = do.call(sim_ddm_vec, c(as.list(pars_only_mat),
                                         as.list(private$fixed),
                                         max_time=private$max_time,
-                                        use_weibull_bound=private$use_weibull_bound,
+                                        bounds=private$bounds,
                                         ...))
       all_sim = rbind(all_sim, cbind(private$par_matrix[, 1:length(private$sim_cond)], this_sim))
       
@@ -359,7 +384,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
 #' \item{dm$predict: \code{\link{predict_diffusion_model}}}
 #' }
 #' 
-#' @usage dm <- diffusion_model$new(data, model_name="base_dm")
+#' @usage dm <- diffusion_model$new(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...)
 #' @usage dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 #' @usage dm$predict(pars=NULL, n=10000, ...)
 #' 
@@ -372,7 +397,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
 #' @param fixed_pars named numeric; to fix a parameter at a specified value, use a named vector as with start_values
 #' @param max_time numeric; max time to simulate a decision. Lower max time keeps computation times lower, but too low will compromise accuracy
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
-#' @param use_weibull_bound logical: if T, use weibull function for collapsing bounds. Default = F
+#' @param bounds string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions
 #' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times
 #' @param ... additional arguments passed to the objective function
 #'

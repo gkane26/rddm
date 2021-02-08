@@ -4,7 +4,7 @@
 \alias{diffusion_model}
 \title{Drift Diffusion Model R6 Class}
 \usage{
-dm <- diffusion_model$new(data, model_name="base_dm")
+dm <- diffusion_model$new(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...)
 
 dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 
@@ -29,7 +29,7 @@ dm$predict(pars=NULL, n=10000, ...)
 
 \item{extra_condition}{character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.}
 
-\item{use_weibull_bound}{logical: if T, use weibull function for collapsing bounds. Default = F}
+\item{bounds}{string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions}
 
 \item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times}
 

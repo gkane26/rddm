@@ -52,6 +52,8 @@ fit_diffusion_model <- function(use_bounds=FALSE, transform_pars=FALSE, n_cores=
     
     if (transform_pars) {
       start_vals = private$logistic_transform(start_vals)
+      start_vals[start_vals < -10] = -10
+      start_vals[start_vals > 10] = 10
     }
     
     self$solution = modelfitr::fit_model(self$obj,

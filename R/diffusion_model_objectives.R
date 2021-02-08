@@ -7,10 +7,11 @@ ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_
   #check params
   if(transform_pars){
     pars = private$logistic_untransform(pars)
-  }else if(sum(pars<private$lower, pars>private$upper) > 0){
-    return(1e10)
   }
+  
   private$set_params(pars)
+  
+  if (!private$check_par_constraints()) return(1e10)
   
   this_par_matrix = copy(private$par_matrix)
   if ("z" %in% names(this_par_matrix)){
@@ -56,30 +57,25 @@ ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug
   #check params
   if(transform_pars){
     pars = private$logistic_untransform(pars)
-  }else if(sum(pars<private$lower, pars>private$upper) > 0){
-    return(1e10)
   }
+  
   private$set_params(pars)
+  
+  if (!private$check_par_constraints()) return(1e10)
   
   ### get list of rt densities
   pars_only_mat = copy(private$par_matrix)
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
   
-  # density_list = list()
-  # for(i in 1:pars_only_mat[,.N]){
-  #   this_density = get_first_passage_density(c(as.list(pars_only_mat[i]), private$fixed), max_time=private$max_time, use_weibull_bound=private$use_weibull_bound, ...)
-  #   density_list[[i]] = c(list(density=this_density), unlist(private$par_matrix[i, private$sim_cond, with=F]))
-  # }
-  
   if (!foreach::getDoParRegistered()) foreach::registerDoSEQ()
 
   fixed = private$fixed
   max_time = private$max_time
-  use_weibull_bound=private$use_weibull_bound
+  bounds=private$bounds
   par_matrix = private$par_matrix
   sim_cond = private$sim_cond
   density_list = foreach::foreach(i=1:pars_only_mat[,.N]) %dopar% {
-    this_density = get_first_passage_density(c(as.list(pars_only_mat[i]), fixed), max_time=max_time, use_weibull_bound=use_weibull_bound, ...)
+    this_density = get_first_passage_density(c(as.list(pars_only_mat[i]), fixed), max_time=max_time, bounds=bounds, ...)
     c(list(density=this_density), unlist(par_matrix[i, sim_cond, with=F]))
   }
   
@@ -106,10 +102,11 @@ ddm_sim_x2 = function(pars, dat=NULL, n_sim=10000, transform_pars=F, debug_lik=F
   #check params
   if(transform_pars){
     pars = private$logistic_untransform(pars)
-  }else if(sum(pars<private$lower, pars>private$upper) > 0){
-    return(1e10)
   }
+  
   private$set_params(pars)
+  
+  if (!private$check_par_constraints()) return(1e10)
   
   pars_only_mat = copy(private$par_matrix)
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
@@ -122,7 +119,7 @@ ddm_sim_x2 = function(pars, dat=NULL, n_sim=10000, transform_pars=F, debug_lik=F
     for(j in 1:length(private$sim_cond)){
       sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
     }
-    this_sim = setDT(do.call(sim_ddm, c(n=n_sim, as.list(pars_only_mat[i], private$fixed), max_time=private$max_time, use_weibull_bound=private$use_weibull_bound, ...)))
+    this_sim = setDT(do.call(sim_ddm, c(n=n_sim, as.list(pars_only_mat[i], private$fixed), max_time=private$max_time, bounds=private$bounds, ...)))
     
     # chisq for overtime trials
     if(length(sub_q[response==-1, n_response])==0){
