@@ -2,6 +2,7 @@
 
 export(ddm_integral_fpt)
 export(diffusion_model)
+export(fpt_to_sim)
 export(get_stimulus)
 export(hyperbolic_ratio_bound)
 export(hyperbolic_ratio_bound_vec)

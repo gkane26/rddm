@@ -48,7 +48,7 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
   }else if (bounds == 1){
     bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
   } else {
-    bound = rep(a, tvec.n_elem);
+    bound = rep(a/2, tvec.n_elem);
   }
   
   double dW = s*sqrt(dt);
@@ -62,7 +62,7 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
     
     arma::vec v_var = v + sv * arma::randn(n_on_thread) + dc,
       z_var = z + sz*(arma::randu(n_on_thread)-.5),
-      x = a/2 * (2*z_var-1),
+      x = a/2 * (z_var - 0.5),
       rt = arma::zeros(n_on_thread);
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
     
@@ -175,7 +175,7 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
   }else if(bounds == 1){
     bound = hyperbolic_ratio_bound_vec(tvec, a, kappa, tc);
   } else {
-    bound.each_row() = a;
+    bound.each_row() = a/2;
   }
   
   double dW = s*sqrt(dt);
@@ -191,12 +191,11 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
     
     arma::vec v_var = v(thread_span) + sv(thread_span) % arma::randn(n_on_thread) + dc(thread_span),
       z_var = z(thread_span) + sz(thread_span) % (arma::randu(n_on_thread) - 0.5),
-      x = a(thread_span) / 2 % (2 * z_var(thread_span) - 1),
+      x = a(thread_span) / 2 % (z_var(thread_span) - 0.5),
       rt = arma::zeros(n_on_thread);
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
     arma::mat bnd = bound.cols(i*n_on_thread, i*n_on_thread+n_on_thread-1);
     arma::mat bnd_t = bnd.t();
-    
     
     while((still_drift.n_elem > 0) & (t < max_time)){
       x(still_drift) +=  v_var(still_drift)*dt + dW*arma::randn(still_drift.size());

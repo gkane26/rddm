@@ -308,13 +308,14 @@ check_par_constraints <- function(){
 #'
 #' @param pars numeric vector; vector of parameters. If NULL, uses model$solution$pars.
 #' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
+#' @param method string; "euler" for euler-maruyama simulation or "integral" for integral equation method
 #' @param ... additional arguments passed to \code{sim_ddm}
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
 #' 
 #' @keywords internal
 #' 
-predict_diffusion_model = function(pars=NULL, n=10000, ...){
+predict_diffusion_model = function(pars=NULL, n=10000, method="euler", ...){
   
   if(is.null(pars)) pars = self$solution$pars
   private$set_params(pars)
@@ -328,12 +329,25 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
     
     for(i in 1:pars_only_mat[, .N]) {
       
-      this_sim = do.call(sim_ddm, c(list(n=n),
-                                    as.list(pars_only_mat[i]),
-                                    as.list(private$fixed),
-                                    max_time=private$max_time,
-                                    bounds=private$bounds,
-                                    ...))
+      if (method == "euler") {
+        this_sim = do.call(sim_ddm, c(list(n=n),
+                                      as.list(pars_only_mat[i]),
+                                      as.list(private$fixed),
+                                      max_time=private$max_time,
+                                      bounds=private$bounds,
+                                      ...))
+      } else if (method == "integral") {
+        
+        this_fpt = do.call(ddm_integral_fpt, c(as.list(pars_only_mat[i]),
+                                               as.list(private$fixed),
+                                               max_time=private$max_time,
+                                               bounds=private$bounds,
+                                               ...))
+        this_sim = fpt_to_sim(this_fpt, n=n)
+        
+      } else {
+        stop("method not supported!")
+      }
       
       all_sim = rbind(all_sim, data.table(private$par_matrix[i, 1:length(private$sim_cond)], this_sim))
       
@@ -347,11 +361,16 @@ predict_diffusion_model = function(pars=NULL, n=10000, ...){
     
     for (i in 1:n) {
       
-      this_sim = do.call(sim_ddm_vec, c(as.list(pars_only_mat),
-                                        as.list(private$fixed),
-                                        max_time=private$max_time,
-                                        bounds=private$bounds,
-                                        ...))
+      if (method == "euler") {
+        this_sim = do.call(sim_ddm_vec, c(as.list(pars_only_mat),
+                                          as.list(private$fixed),
+                                          max_time=private$max_time,
+                                          bounds=private$bounds,
+                                          ...))
+      } else {
+        stop("method not supported!")
+      }
+      
       all_sim = rbind(all_sim, cbind(private$par_matrix[, 1:length(private$sim_cond)], this_sim))
       
     }

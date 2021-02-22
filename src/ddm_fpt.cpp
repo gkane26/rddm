@@ -108,7 +108,7 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
   }else if(bounds == 1){
     bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
   } else {
-    bound = rep(a, tvec.n_elem); 
+    bound = rep(a/2, tvec.n_elem); 
   }
   
   arma::mat density_shared = arma::zeros(nBins, 2);
@@ -169,6 +169,6 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
     rt_density(arma::span(i, i+density_shared.n_rows-1), 1) += density_shared.col(1) * p_t0;
   }
   
-  return rt_density;
+  return rt_density * dt;
   
 }
