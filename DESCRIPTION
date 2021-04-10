@@ -15,7 +15,8 @@ Imports:
     modelfitr,
     parallel,
     foreach,
-    doParallel
+    doParallel,
+    stringr
 Remotes:
     github::gkane26/modelfitr
 LinkingTo:

@@ -6,13 +6,12 @@
 \usage{
 sim_pulse(
   n,
-  up_stimulus,
-  down_stimulus,
+  stimulus,
   v,
   a,
   t0,
   z = 0.5,
-  d = 0,
+  dc = 0,
   sv = 0,
   st0 = 0,
   sz = 0,
@@ -22,17 +21,14 @@ sim_pulse(
   kappa = 0,
   tc = 0.25,
   dt = 0.001,
-  v_scale = 100,
-  use_weibull_bound = FALSE,
+  bounds = 0L,
   n_threads = 1L
 )
 }
 \arguments{
 \item{n}{integer; number of decisions to simulate}
 
-\item{up_stimulus}{float vector; stimulus to the positive boundary}
-
-\item{down_stimulus}{float vector; stimulus to the negative boundary}
+\item{stimulus}{matrix; stimulus to simulate, 1 or 2 rows X timepoints. If 2 rows, row 1 is evidence to upper boundary, row 2 to lower boundary.}
 
 \item{v}{numeric; drift rate}
 
@@ -42,7 +38,7 @@ sim_pulse(
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
-\item{d}{numeric; drift criterion, upper drift = v, lower drift = v-d}
+\item{dc}{numeric; drift criterion, upper drift = v, lower drift = v-d}
 
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
@@ -62,9 +58,7 @@ sim_pulse(
 
 \item{dt}{numeric; time step of simulation, default = .001}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
-
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
 
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
 }

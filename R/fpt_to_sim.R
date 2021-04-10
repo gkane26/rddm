@@ -21,6 +21,6 @@ fpt_to_sim = function(fpt, dt=.01, n=10000) {
     rts = c(rts, rep(tseq[i], sum(n_fpt[i,])))
   }
 
-  data.table(response=responses, rt=rts)
+  data.frame(response=responses, rt=rts)
   
 }

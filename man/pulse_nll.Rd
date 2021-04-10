@@ -7,11 +7,12 @@
 pulse_nll(
   choices,
   rt,
-  stim_seq,
+  stimuli,
   v,
   a,
   t0,
   z = 0L,
+  dc = 0L,
   sv = 0L,
   st0 = 0L,
   sz = 0L,
@@ -21,19 +22,16 @@ pulse_nll(
   kappa = 0L,
   tc = 0L,
   check_pars = TRUE,
-  dt = 0.002,
+  dt = 0.001,
   dx = 0.05,
-  v_scale = 100,
-  use_weibull_bound = FALSE,
-  dur = 0.01,
-  isi = 0.1,
+  bounds = 0L,
   n_threads = 1L
 )
 }
 \arguments{
 \item{rt}{numeric; vector of response times}
 
-\item{stim_seq}{vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
+\item{stimuli}{list; list of stimulus matrices}
 
 \item{v}{numeric; drift rate, either single value or vector for each trial}
 
@@ -42,6 +40,8 @@ pulse_nll(
 \item{t0}{numeric; non-decision time, either single value or vector for each trial}
 
 \item{z}{numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5}
+
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
 
 \item{sv}{numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0}
 
@@ -65,17 +65,15 @@ pulse_nll(
 
 \item{dx}{numeric; size of evidence bins, default = .05}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
-
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
-
-\item{dur}{numeric; duration of stimulus}
-
-\item{isi}{numeric; interstimulus interval}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
 
 \item{n_threads}{int; number of threads (trials) to run in parallel}
 
 \item{choice}{integer; vector of decisions, 0 for lower boundary, 1 for upper}
+
+\item{up_sequence}{vector of strings; string of 0s, and 1s of stimulus values (0 no evidence, 1 to upper). If down_sequence not specified, (0 to lower, 1 to upper).}
+
+\item{down_sequence}{vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)}
 }
 \value{
 negative log likelihood of all choices and rts given pulse model parameters

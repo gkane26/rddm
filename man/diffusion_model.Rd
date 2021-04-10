@@ -6,6 +6,8 @@
 \usage{
 dm <- diffusion_model$new(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...)
 
+dm$set_objective(objective=NULL)
+
 dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 
 dm$predict(pars=NULL, n=10000, ...)
@@ -50,7 +52,7 @@ This class implements all of the following models:
 \details{
 For details regarding other methods, see:
 \itemize{
-\item{dm$set_objective: \code{\link{set_objective}}}
+\item{dm$set_objective: \code{\link{set_ddm_objective}}}
 \item{dm$fit: \code{\link{fit_diffusion_model}}}
 \item{dm$predict: \code{\link{predict_diffusion_model}}}
 }

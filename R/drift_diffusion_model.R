@@ -7,6 +7,7 @@ get_first_passage_density = function(pars_list, dt=.01, ...){
   density
 }
 
+
 get_rt_liks = function(dat, density_list, min_p=1e-10){
   
   min_p = as.numeric(min_p)
@@ -35,6 +36,7 @@ get_rt_liks = function(dat, density_list, min_p=1e-10){
   new_dat[p_rt < min_p, p_rt := min_p]
   return(new_dat)
 }
+
 
 set_dm_parameters = function(pars){
   self$par_values = pars
@@ -67,12 +69,36 @@ set_dm_parameters = function(pars){
   
 }
 
+
 get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions = c("correctSide")){
   p_q = diff(c(0,qs,1))
   rt_qs = dat[, c("n_response" = .N, "p_response" = numeric(1), as.list(quantile(get(rt_var), qs))), c("response", conditions)]
   rt_qs[, p_response := n_response/sum(n_response), conditions]
   list(rt_qs, p_q)
 }
+
+
+check_ddm_constraints <- function(){
+  par_matrix_names = names(private$par_matrix)
+  checks = sum(private$par_matrix[, a <= 0]) # a
+  checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
+  if ("z" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
+  if ("sz" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
+  if ("st0" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
+  if ("aprime"  %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
+  if ("kappa" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
+  if ("tc" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
+  if ("s" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, s <= 0]) # s
+  return(checks == 0)
+}
+
 
 #' set diffusion model objective function (for internal use)
 #' 
@@ -89,7 +115,7 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions = c
 #' 
 #' @return modifies the field \code{obj}
 #' 
-set_objective <- function(objective=NULL) {
+set_ddm_objective <- function(objective=NULL) {
   
   if (is.null(objective)) {
     if(("aprime" %in% self$par_names) | ("kappa" %in% self$par_names) | ("tc" %in% self$par_names)) {
@@ -116,6 +142,7 @@ set_objective <- function(objective=NULL) {
   invisible(self)
   
 }
+
 
 init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...){
   
@@ -277,30 +304,10 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
   
 }
 
-check_par_constraints <- function(){
-  par_matrix_names = names(private$par_matrix)
-  checks = sum(private$par_matrix[, a <= 0]) # a
-  checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
-  if ("z" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
-  if ("sz" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
-  if ("st0" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
-  if ("aprime"  %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
-  if ("kappa" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
-  if ("tc" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
-  if ("s" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, s <= 0]) # s
-  return(checks == 0)
-}
 
 #' predict diffusion model  (for internal use)
 #' 
-#' Predict behavior with given diffusion model parameters using Euler-Maruyama simulation.
+#' Predict behavior with given diffusion model parameters..
 #' This function is only intended for use with a diffusion model object,
 #' and should not be called directly outside of the diffusion model class.
 #' 
@@ -398,12 +405,13 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="euler", ...){
 #' 
 #' For details regarding other methods, see:
 #' \itemize{
-#' \item{dm$set_objective: \code{\link{set_objective}}}
+#' \item{dm$set_objective: \code{\link{set_ddm_objective}}}
 #' \item{dm$fit: \code{\link{fit_diffusion_model}}}
 #' \item{dm$predict: \code{\link{predict_diffusion_model}}}
 #' }
 #' 
 #' @usage dm <- diffusion_model$new(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...)
+#' @usage dm$set_objective(objective=NULL)
 #' @usage dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 #' @usage dm$predict(pars=NULL, n=10000, ...)
 #' 
@@ -439,14 +447,15 @@ diffusion_model = R6::R6Class("diffusion_model",
                               public=list(
                                 data_q=NULL,
                                 initialize=init_diffusion_model,
-                                set_objective=set_objective,
+                                set_objective=set_ddm_objective,
                                 predict=predict_diffusion_model
                               ), private=list(
                                 p_q=NULL,
                                 max_time=NULL,
                                 as_function=NULL,
+                                bounds=NULL,
                                 set_params=set_dm_parameters,
-                                check_par_constraints=check_par_constraints,
+                                check_par_constraints=check_ddm_constraints,
                                 rtdists_obj = ddm_rtdists_nll,
                                 integral_obj = ddm_integral_nll,
                                 chisq_obj = ddm_sim_x2

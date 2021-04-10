@@ -2,14 +2,30 @@
 % Please edit documentation in R/pulse_diffusion_model.R
 \name{pulse_model}
 \alias{pulse_model}
-\title{Pulse diffusion model object}
+\title{Pulse diffusion model R6 Class}
 \usage{
-pulse_model$new(dat, model_name)
+pdm <- pulse_model$new(dat, stim_var, stim_sep="", stim_dur=.01, stim_interval=.1, model_name="pdm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds=0L, objective="fp")
+
+pdm$set_objective(objective="fp")
+
+pdm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
+
+dm$predict(pars=NULL, n=10000, ...)
 }
 \arguments{
 \item{dat}{data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)}
 
-\item{stim_var}{string; name of stimulus column in dat, default = "blinkSequence"}
+\item{stim_var}{string; name of stimulus column in dat. If two names, first is upper boundary evidence and second is lower boundary evidence. If one variable name, assumes binary evidence with 1=evidence to upper boundary and  0=evidence to lower boundary}
+
+\item{stim_sep}{string; pattern separating timepoint by timepoint evidence within evidence string}
+
+\item{stim_dur}{numeric; stimulus pulse duration (in seconds)}
+
+\item{stim_interval}{numeric; inter-stimulus interval (in seconds)}
+
+\item{stim_pre}{numeric; time before stimulus pulse within stimulus bin}
+
+\item{dt}{numeric; time step to simulate/solve for first passage times}
 
 \item{model_name}{string; name to identify model, default = "ddm"}
 
@@ -17,17 +33,30 @@ pulse_model$new(dat, model_name)
 
 \item{depends_on}{named character; if a parameter value depends on a task condition, for example drift rate depends on task difficulty, specify here: c("v" = "task difficulty"). Can specify multiple dependent parameters as a vector}
 
+\item{as_function}{list; list specifying parameters whose value is a function of other parameters}
+
 \item{start_values}{named numeric; to change default starting parameter values, specify as named vector. E.g. c("v"=2, "a"=3) to set drift rate to 2 and boundary to 3}
 
 \item{fixed_pars}{named numeric; to fix a parameter at a specified value, use a named vector as with start_values}
 
 \item{extra_condition}{character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.}
 
-\item{use_weibull_bound}{logical: if T, use weibull function for collapsing bounds. Default = F}
+\item{bounds}{string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions}
+
+\item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times}
 }
 \value{
 definition of pulse diffusion model object
 }
 \description{
-Pulse diffusion model object
+R6 Class that defines a pulse diffusion model (Brunton et al., 2012, Science) to be applied to a set of behavioral data.
+
+#' @details 
+
+For details regarding other methods, see:
+\itemize{
+\item{pm$set_objective: \code{\link{set_pdm_objective}}}
+\item{pm$fit: \code{\link{fit_diffusion_model}}}
+\item{pm$predict: \code{\link{predict_pulse_model}}}
+}
 }

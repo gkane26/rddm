@@ -52,8 +52,7 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
   }
   
   double dW = s*sqrt(dt);
-  max_time = max_time - t0;
-  
+
 #pragma omp parallel for
   for (int i=0; i<n_threads; i++){
     
@@ -152,8 +151,6 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
       aprime = arma::zeros(lens.max()) + aprime(0);
     }
     if (kappa.n_elem < lens.max()) {
-      if (kappa(0) == 0)
-        kappa(0) = 1;
       kappa = arma::zeros(lens.max()) + kappa(0);
     }
     if (tc.n_elem < lens.max()) {
@@ -169,18 +166,17 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
     response_full = arma::zeros(v.n_elem);
   
   arma::vec tvec = arma::regspace(dt, dt, max_time);
-  arma::mat bound;
+  arma::mat bound(tvec.n_elem, a.n_elem);
   if(bounds == 2){
     bound = weibull_bound_vec(tvec, a, aprime, kappa, tc);
   }else if(bounds == 1){
     bound = hyperbolic_ratio_bound_vec(tvec, a, kappa, tc);
   } else {
-    bound.each_row() = a/2;
+    bound.each_col() = arma::zeros(tvec.n_elem) + a/2;
   }
   
   double dW = s*sqrt(dt);
-  max_time = max_time - t0.max();
-  
+
 #pragma omp parallel for
   for (int i=0; i<n_threads; i++) {
     

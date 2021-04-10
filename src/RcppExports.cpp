@@ -95,32 +95,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_stimulus
-arma::ivec get_stimulus(std::string sequence, double intensity, double dur, double isi, double dt);
-RcppExport SEXP _rddm_get_stimulus(SEXP sequenceSEXP, SEXP intensitySEXP, SEXP durSEXP, SEXP isiSEXP, SEXP dtSEXP) {
+// pulse_fp_fpt
+arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0, double z, double dc, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, double dx, int bounds);
+RcppExport SEXP _rddm_pulse_fp_fpt(SEXP stimulusSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP boundsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type sequence(sequenceSEXP);
-    Rcpp::traits::input_parameter< double >::type intensity(intensitySEXP);
-    Rcpp::traits::input_parameter< double >::type dur(durSEXP);
-    Rcpp::traits::input_parameter< double >::type isi(isiSEXP);
-    Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_stimulus(sequence, intensity, dur, isi, dt));
-    return rcpp_result_gen;
-END_RCPP
-}
-// pulse_pmass_fpt
-arma::mat pulse_pmass_fpt(arma::ivec stimulus, double v, double a, double t0, double z, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, double dx, double v_scale, bool use_weibull_bound);
-RcppExport SEXP _rddm_pulse_pmass_fpt(SEXP stimulusSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP v_scaleSEXP, SEXP use_weibull_boundSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::ivec >::type stimulus(stimulusSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type stimulus(stimulusSEXP);
     Rcpp::traits::input_parameter< double >::type v(vSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
     Rcpp::traits::input_parameter< double >::type t0(t0SEXP);
     Rcpp::traits::input_parameter< double >::type z(zSEXP);
+    Rcpp::traits::input_parameter< double >::type dc(dcSEXP);
     Rcpp::traits::input_parameter< double >::type sv(svSEXP);
     Rcpp::traits::input_parameter< double >::type st0(st0SEXP);
     Rcpp::traits::input_parameter< double >::type sz(szSEXP);
@@ -131,25 +117,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tc(tcSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type dx(dxSEXP);
-    Rcpp::traits::input_parameter< double >::type v_scale(v_scaleSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
-    rcpp_result_gen = Rcpp::wrap(pulse_pmass_fpt(stimulus, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, v_scale, use_weibull_bound));
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pulse_fp_fpt(stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds));
     return rcpp_result_gen;
 END_RCPP
 }
 // pulse_trial_lik
-double pulse_trial_lik(int choice, double rt, std::string stim_seq, double v, double a, double t0, double z, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, double dx, double v_scale, bool use_weibull_bound, double dur, double isi);
-RcppExport SEXP _rddm_pulse_trial_lik(SEXP choiceSEXP, SEXP rtSEXP, SEXP stim_seqSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP v_scaleSEXP, SEXP use_weibull_boundSEXP, SEXP durSEXP, SEXP isiSEXP) {
+double pulse_trial_lik(int choice, double rt, arma::mat stimulus, double v, double a, double t0, double z, double dc, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, double dx, int bounds);
+RcppExport SEXP _rddm_pulse_trial_lik(SEXP choiceSEXP, SEXP rtSEXP, SEXP stimulusSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP boundsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type choice(choiceSEXP);
     Rcpp::traits::input_parameter< double >::type rt(rtSEXP);
-    Rcpp::traits::input_parameter< std::string >::type stim_seq(stim_seqSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type stimulus(stimulusSEXP);
     Rcpp::traits::input_parameter< double >::type v(vSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
     Rcpp::traits::input_parameter< double >::type t0(t0SEXP);
     Rcpp::traits::input_parameter< double >::type z(zSEXP);
+    Rcpp::traits::input_parameter< double >::type dc(dcSEXP);
     Rcpp::traits::input_parameter< double >::type sv(svSEXP);
     Rcpp::traits::input_parameter< double >::type st0(st0SEXP);
     Rcpp::traits::input_parameter< double >::type sz(szSEXP);
@@ -160,27 +146,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type tc(tcSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type dx(dxSEXP);
-    Rcpp::traits::input_parameter< double >::type v_scale(v_scaleSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
-    Rcpp::traits::input_parameter< double >::type dur(durSEXP);
-    Rcpp::traits::input_parameter< double >::type isi(isiSEXP);
-    rcpp_result_gen = Rcpp::wrap(pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, v_scale, use_weibull_bound, dur, isi));
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pulse_trial_lik(choice, rt, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds));
     return rcpp_result_gen;
 END_RCPP
 }
 // pulse_nll
-double pulse_nll(arma::vec choices, arma::vec rt, std::vector<std::string> stim_seq, arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec s, arma::vec lambda, arma::vec aprime, arma::vec kappa, arma::vec tc, bool check_pars, double dt, double dx, double v_scale, bool use_weibull_bound, double dur, double isi, int n_threads);
-RcppExport SEXP _rddm_pulse_nll(SEXP choicesSEXP, SEXP rtSEXP, SEXP stim_seqSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP check_parsSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP v_scaleSEXP, SEXP use_weibull_boundSEXP, SEXP durSEXP, SEXP isiSEXP, SEXP n_threadsSEXP) {
+double pulse_nll(arma::vec choices, arma::vec rt, List stimuli, arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec s, arma::vec lambda, arma::vec aprime, arma::vec kappa, arma::vec tc, bool check_pars, double dt, double dx, int bounds, int n_threads);
+RcppExport SEXP _rddm_pulse_nll(SEXP choicesSEXP, SEXP rtSEXP, SEXP stimuliSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP check_parsSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP boundsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type choices(choicesSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type rt(rtSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string> >::type stim_seq(stim_seqSEXP);
+    Rcpp::traits::input_parameter< List >::type stimuli(stimuliSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type a(aSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type t0(t0SEXP);
     Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type dc(dcSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type sv(svSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type st0(st0SEXP);
     Rcpp::traits::input_parameter< arma::vec >::type sz(szSEXP);
@@ -192,28 +176,25 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type dx(dxSEXP);
-    Rcpp::traits::input_parameter< double >::type v_scale(v_scaleSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
-    Rcpp::traits::input_parameter< double >::type dur(durSEXP);
-    Rcpp::traits::input_parameter< double >::type isi(isiSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(pulse_nll(choices, rt, stim_seq, v, a, t0, z, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads));
+    rcpp_result_gen = Rcpp::wrap(pulse_nll(choices, rt, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, bounds, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
 // pulse_predict
-DataFrame pulse_predict(int n, std::vector<std::string> stim_seq, arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec d, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec s, arma::vec lambda, arma::vec aprime, arma::vec kappa, arma::vec tc, bool check_pars, double dt, double dx, double v_scale, bool use_weibull_bound, double dur, double isi, int n_threads);
-RcppExport SEXP _rddm_pulse_predict(SEXP nSEXP, SEXP stim_seqSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP check_parsSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP v_scaleSEXP, SEXP use_weibull_boundSEXP, SEXP durSEXP, SEXP isiSEXP, SEXP n_threadsSEXP) {
+DataFrame pulse_predict(int n, List stimuli, arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec s, arma::vec lambda, arma::vec aprime, arma::vec kappa, arma::vec tc, bool check_pars, double dt, double dx, int bounds, int n_threads);
+RcppExport SEXP _rddm_pulse_predict(SEXP nSEXP, SEXP stimuliSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP check_parsSEXP, SEXP dtSEXP, SEXP dxSEXP, SEXP boundsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< std::vector<std::string> >::type stim_seq(stim_seqSEXP);
+    Rcpp::traits::input_parameter< List >::type stimuli(stimuliSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type a(aSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type t0(t0SEXP);
     Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type d(dSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type dc(dcSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type sv(svSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type st0(st0SEXP);
     Rcpp::traits::input_parameter< arma::vec >::type sz(szSEXP);
@@ -225,12 +206,24 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type dx(dxSEXP);
-    Rcpp::traits::input_parameter< double >::type v_scale(v_scaleSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(pulse_predict(n, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, bounds, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// pulse_trial_stimulus
+arma::rowvec pulse_trial_stimulus(arma::vec stim_seq, double dur, double isi, double pre_stim, double dt);
+RcppExport SEXP _rddm_pulse_trial_stimulus(SEXP stim_seqSEXP, SEXP durSEXP, SEXP isiSEXP, SEXP pre_stimSEXP, SEXP dtSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type stim_seq(stim_seqSEXP);
     Rcpp::traits::input_parameter< double >::type dur(durSEXP);
     Rcpp::traits::input_parameter< double >::type isi(isiSEXP);
-    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(pulse_predict(n, stim_seq, v, a, t0, z, d, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, v_scale, use_weibull_bound, dur, isi, n_threads));
+    Rcpp::traits::input_parameter< double >::type pre_stim(pre_stimSEXP);
+    Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
+    rcpp_result_gen = Rcpp::wrap(pulse_trial_stimulus(stim_seq, dur, isi, pre_stim, dt));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -289,19 +282,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // sim_pulse
-DataFrame sim_pulse(int n, arma::ivec up_stimulus, arma::ivec down_stimulus, double v, double a, double t0, double z, double d, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, double v_scale, bool use_weibull_bound, int n_threads);
-RcppExport SEXP _rddm_sim_pulse(SEXP nSEXP, SEXP up_stimulusSEXP, SEXP down_stimulusSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP v_scaleSEXP, SEXP use_weibull_boundSEXP, SEXP n_threadsSEXP) {
+List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0, double z, double dc, double sv, double st0, double sz, double s, double lambda, double aprime, double kappa, double tc, double dt, int bounds, int n_threads);
+RcppExport SEXP _rddm_sim_pulse(SEXP nSEXP, SEXP stimulusSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP boundsSEXP, SEXP n_threadsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type n(nSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type up_stimulus(up_stimulusSEXP);
-    Rcpp::traits::input_parameter< arma::ivec >::type down_stimulus(down_stimulusSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type stimulus(stimulusSEXP);
     Rcpp::traits::input_parameter< double >::type v(vSEXP);
     Rcpp::traits::input_parameter< double >::type a(aSEXP);
     Rcpp::traits::input_parameter< double >::type t0(t0SEXP);
     Rcpp::traits::input_parameter< double >::type z(zSEXP);
-    Rcpp::traits::input_parameter< double >::type d(dSEXP);
+    Rcpp::traits::input_parameter< double >::type dc(dcSEXP);
     Rcpp::traits::input_parameter< double >::type sv(svSEXP);
     Rcpp::traits::input_parameter< double >::type st0(st0SEXP);
     Rcpp::traits::input_parameter< double >::type sz(szSEXP);
@@ -311,10 +303,38 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< double >::type tc(tcSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
-    Rcpp::traits::input_parameter< double >::type v_scale(v_scaleSEXP);
-    Rcpp::traits::input_parameter< bool >::type use_weibull_bound(use_weibull_boundSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sim_pulse(n, up_stimulus, down_stimulus, v, a, t0, z, d, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, v_scale, use_weibull_bound, n_threads));
+    rcpp_result_gen = Rcpp::wrap(sim_pulse(n, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, bounds, n_threads));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sim_pulse_vec
+DataFrame sim_pulse_vec(int n, List stimuli, arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec s, arma::vec lambda, arma::vec aprime, arma::vec kappa, arma::vec tc, double dt, int bounds, bool check_pars, int n_threads);
+RcppExport SEXP _rddm_sim_pulse_vec(SEXP nSEXP, SEXP stimuliSEXP, SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP sSEXP, SEXP lambdaSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP dtSEXP, SEXP boundsSEXP, SEXP check_parsSEXP, SEXP n_threadsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< List >::type stimuli(stimuliSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type v(vSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type a(aSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type t0(t0SEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type z(zSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type dc(dcSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sv(svSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type st0(st0SEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sz(szSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type s(sSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type lambda(lambdaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type aprime(aprimeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type kappa(kappaSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type tc(tcSEXP);
+    Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
+    Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
+    Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_pulse_vec(n, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, bounds, check_pars, n_threads));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -325,14 +345,15 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rddm_weibull_bound", (DL_FUNC) &_rddm_weibull_bound, 5},
     {"_rddm_weibull_bound_vec", (DL_FUNC) &_rddm_weibull_bound_vec, 6},
     {"_rddm_ddm_integral_fpt", (DL_FUNC) &_rddm_ddm_integral_fpt, 19},
-    {"_rddm_get_stimulus", (DL_FUNC) &_rddm_get_stimulus, 5},
-    {"_rddm_pulse_pmass_fpt", (DL_FUNC) &_rddm_pulse_pmass_fpt, 17},
-    {"_rddm_pulse_trial_lik", (DL_FUNC) &_rddm_pulse_trial_lik, 21},
-    {"_rddm_pulse_nll", (DL_FUNC) &_rddm_pulse_nll, 23},
-    {"_rddm_pulse_predict", (DL_FUNC) &_rddm_pulse_predict, 23},
+    {"_rddm_pulse_fp_fpt", (DL_FUNC) &_rddm_pulse_fp_fpt, 17},
+    {"_rddm_pulse_trial_lik", (DL_FUNC) &_rddm_pulse_trial_lik, 19},
+    {"_rddm_pulse_nll", (DL_FUNC) &_rddm_pulse_nll, 21},
+    {"_rddm_pulse_predict", (DL_FUNC) &_rddm_pulse_predict, 20},
+    {"_rddm_pulse_trial_stimulus", (DL_FUNC) &_rddm_pulse_trial_stimulus, 5},
     {"_rddm_sim_ddm", (DL_FUNC) &_rddm_sim_ddm, 17},
     {"_rddm_sim_ddm_vec", (DL_FUNC) &_rddm_sim_ddm_vec, 17},
-    {"_rddm_sim_pulse", (DL_FUNC) &_rddm_sim_pulse, 20},
+    {"_rddm_sim_pulse", (DL_FUNC) &_rddm_sim_pulse, 18},
+    {"_rddm_sim_pulse_vec", (DL_FUNC) &_rddm_sim_pulse_vec, 19},
     {NULL, NULL, 0}
 };
 

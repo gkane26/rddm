@@ -14,11 +14,12 @@ using namespace Rcpp;
 //' Get predicted behavior from pulse model
 //'
 //' @param n int; number of predicted samples to take per stimulus
-//' @param stim_seq vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)
+//' @param stimuli list; list of stimulus matrices
 //' @param v numeric; drift rate, either single value or vector for each trial
 //' @param a numeric; initial boundary, either single value or vector for each trial
 //' @param t0 numeric; non-decision time, either single value or vector for each trial
 //' @param z numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5
+//' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
 //' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
@@ -29,24 +30,23 @@ using namespace Rcpp;
 //' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 //' @param dt numeric; time step of simulation, default = .001
-//' @param v_scale numeric; scale drift rate to be similar to boundary separation a, default = 100
-//' @param use_weibull_bound logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function
-//' @param dur numeric; duration of stimulus
-//' @param isi numeric; interstimulus interval
+//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param n_threads int; number of threads (trials) to run in parallel
 //'
 //' @return data frame with two columns: response (1 for upper boundary, 0 for lower), response time
 //'
 //' @export
 // [[Rcpp::export]]
-DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
+DataFrame pulse_predict(int n, List stimuli,
                         arma::vec v, arma::vec a, arma::vec t0,
-                        arma::vec z=0, arma::vec d=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
+                        arma::vec z=0, arma::vec dc=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
                         arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
-                        double dt=.002, double dx=.05, double v_scale=100, bool use_weibull_bound=false, double dur=.01, double isi=.1, int n_threads=1){
+                        double dt=.001, double dx=.05, int bounds=0, int n_threads=1){
+  
+  omp_set_num_threads(n_threads);
   
   // check parameter vectors
-  unsigned int stim_length = stim_seq.size();
+  unsigned int stim_length = stimuli.length();
   if(check_pars){
     z(arma::find(z==0)).fill(0.5);
     s(arma::find(s==0)).fill(1);
@@ -59,8 +59,8 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
       t0 = arma::zeros(stim_length)+t0(0);
     if(z.n_elem != stim_length)
       z = arma::zeros(stim_length)+z(0);
-    if(d.n_elem != stim_length)
-      d = arma::zeros(stim_length) + d(0);
+    if(dc.n_elem != stim_length)
+      dc = arma::zeros(stim_length) + dc(0);
     if(sv.n_elem != stim_length)
       sv = arma::zeros(stim_length)+sv(0);
     if(sz.n_elem != stim_length)
@@ -82,12 +82,11 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
   arma::ivec choices(n*stim_length), trials(n*stim_length);
   arma::vec rt(n*stim_length);
   
+#pragma omp parallel for
   for(unsigned int i=0; i<stim_length; i++){
-    arma::ivec this_stim = get_stimulus(stim_seq[i], dur, isi);
-    arma::ivec down_stim = arma::zeros<arma::ivec>(this_stim.n_elem);
-    DataFrame this_sim = sim_pulse(n, this_stim, down_stim, v(i), a(i), t0(i), z(i), d(i), sv(i), st0(i), sz(i), s(i),
+    DataFrame this_sim = sim_pulse(n, stimuli[i], v(i), a(i), t0(i), z(i), dc(i), sv(i), st0(i), sz(i), s(i),
                                    lambda(i), aprime(i), kappa(i), tc(i),
-                                   dt, v_scale, use_weibull_bound, n_threads);
+                                   dt, bounds, n_threads);
     
     choices.subvec(i*n,i*n+n-1) = as<arma::ivec>(this_sim[0]);
     rt.subvec(i*n, i*n+n-1) = as<arma::vec>(this_sim[1]);
@@ -95,4 +94,5 @@ DataFrame pulse_predict(int n, std::vector<std::string> stim_seq,
   }
   
   return DataFrame::create(Named("trial")=trials, Named("response")=choices, Named("rt")=rt);
+  
 }
