@@ -20,6 +20,7 @@ sim_pulse(
   aprime = 0,
   kappa = 0,
   tc = 0.25,
+  v_scale = 1,
   dt = 0.001,
   bounds = 0L,
   n_threads = 1L
@@ -56,6 +57,8 @@ sim_pulse(
 
 \item{tc}{numeric; time constant of collapse, default = .25}
 
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
+
 \item{dt}{numeric; time step of simulation, default = .001}
 
 \item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
@@ -63,7 +66,7 @@ sim_pulse(
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
 }
 \value{
-data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 }
 \description{
 Simulate drift diffusion model with fixed or collapsing boundary

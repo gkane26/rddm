@@ -19,8 +19,9 @@ pulse_fp_fpt(
   aprime = 0,
   kappa = 0,
   tc = 0.25,
+  v_scale = 1,
   dt = 0.001,
-  dx = 0.05,
+  dx = 0.01,
   bounds = 0L
 )
 }
@@ -52,6 +53,8 @@ pulse_fp_fpt(
 \item{kappa}{numeric; slope of collapse, default = 0}
 
 \item{tc}{numeric; time constant of collapse, default = .25}
+
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
 
 \item{dt}{numeric; time step of simulation, default = .001}
 

@@ -24,6 +24,7 @@ using namespace Rcpp;
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
+//' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param dx numeric; size of evidence bins, default = .05
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -33,12 +34,13 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0, double z=0.5, double dc=0,
-                          double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
-                          double aprime=0, double kappa=0, double tc=.25,
-                          double dt=.001, double dx=.01, int bounds=0){
+                       double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
+                       double aprime=0, double kappa=0, double tc=.25,
+                       double v_scale=1, double dt=.001, double dx=.01, int bounds=0){
   
-  v *= 100;
-  sv *= 100;
+  // scale drift rate
+  v *= v_scale;
+  sv *= v_scale;
   
   // make bins
   int n_x_breaks = round(a / dx);
@@ -149,6 +151,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0, double
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
+//' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param dx numeric; size of evidence bins, default = .05
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -161,9 +164,9 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
                        double v, double a, double t0, double z=0.5, double dc=0,
                        double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
-                       double dt=.001, double dx=.05, int bounds=0){
-
-  arma::mat fpt_density = pulse_fp_fpt(stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds);
+                       double v_scale=1, double dt=.001, double dx=.05, int bounds=0){
+  
+  arma::mat fpt_density = pulse_fp_fpt(stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, v_scale, dt, dx, bounds);
   return fpt_density(rt/dt-1, abs(1-choice));
   
 }
@@ -190,6 +193,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 //' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
+//' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .002
 //' @param dx numeric; size of evidence bins, default = .05
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -203,7 +207,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
                  arma::vec v, arma::vec a, arma::vec t0,
                  arma::vec z=0, arma::vec dc=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0,
                  arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
-                 double dt=.001, double dx=.05, int bounds=0, int n_threads=1){
+                 double v_scale=1, double dt=.001, double dx=.05, int bounds=0, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   
@@ -240,16 +244,18 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
       tc = arma::zeros(choices.n_elem)+tc(0);
   }
   
+  arma::field<arma::mat> stimuli_field = as<arma::field<arma::mat>>(stimuli);
+  
   double p_rt=0;
   
   // omp parallel over decisions
-#pragma omp parallel for
+#pragma omp parallel for num_threads(n_threads)
   for(unsigned int i=0; i<choices.n_elem; i++){
     
-    double p_local = pulse_trial_lik(choices(i), rt(i), stimuli[i],
+    double p_local = pulse_trial_lik(choices(i), rt(i), stimuli_field(i),
                                      v(i), a(i), t0(i), z(i), dc(i), sv(i), st0(i), sz(i), s(i),
                                      lambda(i), aprime(i), kappa(i), tc(i),
-                                     dt, dx, bounds);
+                                     v_scale, dt, dx, bounds);
     
     if(p_local<1e-10)
       p_local=1e-10;

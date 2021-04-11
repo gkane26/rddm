@@ -20,6 +20,7 @@ sim_pulse_vec(
   aprime = 0L,
   kappa = 0L,
   tc = 0L,
+  v_scale = 1,
   dt = 0.001,
   bounds = 0L,
   check_pars = TRUE,
@@ -55,6 +56,8 @@ sim_pulse_vec(
 
 \item{tc}{numeric vector; time constant of collapse, default = .25}
 
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
+
 \item{dt}{numeric; time step of simulation, default = .001}
 
 \item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
@@ -66,7 +69,7 @@ sim_pulse_vec(
 \item{stimulus}{matrix; stimulus to simulate, 1 or 2 rows X timepoints. If 2 rows, row 1 is evidence to upper boundary, row 2 to lower boundary.}
 }
 \value{
-data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 }
 \description{
 Simulate drift diffusion model with fixed or collapsing boundary

@@ -95,7 +95,7 @@ check_pdm_constraints <- function(){
   if ("st0" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("lambda" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (lambda < -1) | (lambda > 1)]) # lambda
+    checks = checks + sum(private$par_matrix[, (lambda < -100) | (lambda > 100)]) # lambda
   if ("aprime" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
@@ -154,12 +154,46 @@ set_pdm_objective <- function(objective="fp") {
 #' 
 #' @keywords internal
 #' 
-predict_pulse_model = function(pars=NULL, n=10000, method="euler"){
+predict_pulse_model = function(pars=NULL, n=10000, method="euler", ...){
+  
+  browser()
   
   if(is.null(pars)) pars = self$solution$pars
   private$set_params(pars)
   
-  do.call(pulse_predict, c(n=n, list(stim_seq=dat[[private$stim_var]]), as.list(private$par_matrix), use_weibull_bound=private$use_weibull_bound, ...))
+  if (method == "euler") {
+    
+    # do.call(pulse_predict, c(n=n, list(stimuli=private$stim_mat_list), as.list(private$par_matrix), bounds=private$bounds, ...))
+    d_pred = data.table()
+    
+    for (i in 1:length(private$stim_mat_list)) {
+      
+      this_sim = do.call(sim_pulse, c(n=n, list(stimuli=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
+      d_pred = rbind(d_pred, setDT(this_sim))
+      
+    }
+    
+    d_pred
+    
+  } else if (method == "fp") {
+    
+    d_pred = data.table()
+    
+    for (i in 1:length(private$stim_mat_list)) {
+      
+      this_fpt = do.call(pulse_fp_fpt, c(list(stimulus=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
+      this_sim = setDT(fpt_to_sim(this_fpt, n=n))
+      d_pred = rbind(d_pred, this_sim)
+      
+    }
+    
+    d_pred
+    
+    
+  } else {
+    
+    stop("method not implemented")
+  }
 }
 
 
@@ -216,8 +250,8 @@ init_pulse_model = function(dat,
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
   values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, 0, .25, 1)
-  lower = c(-10, .1, 1e-10, .2, -10, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
-  upper = c(10, 10, 1, .8, 10, 10, .2, .2, 1, 1, 5, 2, 5)
+  lower = c(-100, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
+  upper = c(100, 10, 1, .8, 10, 100, .2, .2, 100, 1, 5, 2, 5)
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]

@@ -30,7 +30,7 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
+List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
                   double sv=0, double st0=0, double sz=0,
                   double aprime=0, double kappa=0, double tc=.25,
                   double s=1, double dt=.001, double max_time=10, int bounds=0, int n_threads=1){
@@ -51,6 +51,9 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
     bound = rep(a/2, tvec.n_elem);
   }
   
+  arma::mat accumulators_full(n, tvec.n_elem+1);
+  accumulators_full.fill(arma::datum::nan);
+  
   double dW = s*sqrt(dt);
 
 #pragma omp parallel for
@@ -64,6 +67,9 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
       x = a/2 * (z_var - 0.5),
       rt = arma::zeros(n_on_thread);
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
+    arma::mat accumulators(n_on_thread, tvec.n_elem+1);
+    accumulators.fill(arma::datum::nan);
+    accumulators.col(0) = x;
     
     while((still_drift.n_elem > 0) & (t < max_time)){
       x(still_drift) +=  v_var(still_drift)*dt + dW*arma::randn(still_drift.size());
@@ -71,6 +77,7 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
       still_drift = arma::find(arma::abs(x) < bound(step));
       t+=dt;
       step++;
+      accumulators.col(step) = x;
     }
     
     double final_bound = bound(bound.n_elem-1);
@@ -80,11 +87,12 @@ DataFrame sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0
     
     rt_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = rt;
     response_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = response;
+    accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
     
   }
   
   DataFrame sim = DataFrame::create(Named("response")=response_full, Named("rt")=rt_full+t0+st0*(arma::randu(n)-.5));
-  return sim;
+  return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
 }
 
 //' Simulate drift diffusion model with fixed or collapsing boundary
