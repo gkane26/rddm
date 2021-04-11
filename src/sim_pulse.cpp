@@ -36,6 +36,9 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
                     double aprime=0, double kappa=0, double tc=.25, 
                     double dt=.001, int bounds=0, int n_threads=1){
   
+  v *= 100;
+  sv *= 100;
+  
   omp_set_num_threads(n_threads);
   int n_on_thread = n / n_threads;
   

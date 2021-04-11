@@ -37,7 +37,7 @@ pulse_fp_obj <- function(pars,
                              bounds=private$bounds,
                              ...))
   
-  if(debug) cat("nll =", nll, "\n")
+  if(debug) cat("nll =", round(nll, 3), "\n")
   
   nll
   
@@ -89,15 +89,15 @@ check_pdm_constraints <- function(){
   checks = sum(private$par_matrix[, a <= 0]) # a
   checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
+    checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   if ("sz" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
+    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
+    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("lambda" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (lambda < -1) & (lambda > 1)]) # lambda
+    checks = checks + sum(private$par_matrix[, (lambda < -1) | (lambda > 1)]) # lambda
   if ("aprime" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
+    checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
   if ("tc" %in% par_matrix_names)
@@ -216,7 +216,7 @@ init_pulse_model = function(dat,
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
   values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, 0, .25, 1)
-  lower = c(-10, .01, 1e-10, .2, -10, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
+  lower = c(-10, .1, 1e-10, .2, -10, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
   upper = c(10, 10, 1, .8, 10, 10, .2, .2, 1, 1, 5, 2, 5)
   
   # check all supplied parameters, remove if not in all_pars

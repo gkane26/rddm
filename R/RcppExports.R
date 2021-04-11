@@ -95,7 +95,7 @@ ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, 
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, dx = .05, bounds = 0L) {
+pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, dx = .01, bounds = 0L) {
     .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds)
 }
 

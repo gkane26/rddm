@@ -35,13 +35,18 @@ using namespace Rcpp;
 arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0, double z=0.5, double dc=0,
                           double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
                           double aprime=0, double kappa=0, double tc=.25,
-                          double dt=.001, double dx=.05, int bounds=0){
+                          double dt=.001, double dx=.01, int bounds=0){
+  
+  v *= 100;
+  sv *= 100;
   
   // make bins
   int n_x_breaks = round(a / dx);
   if(n_x_breaks % 2 == 1)
     n_x_breaks++;
+  
   arma::vec bin_breaks = arma::linspace(-a/2, a/2, n_x_breaks);
+  // Rcout << a/2 << ", " << dx << ", " << n_x_breaks << ", " << bin_breaks.n_elem  << "\n";
   arma::vec bin_centers = bin_breaks.head(bin_breaks.n_elem-1) + diff(bin_breaks)/2;
   
   // initialize prob mass matrix and transition matrix
