@@ -240,10 +240,10 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
       tc = arma::zeros(choices.n_elem)+tc(0);
   }
   
-  arma::vec p_rt(choices.n_elem, arma::fill::zeros);
+  double p_rt=0;
 
   // omp parallel over decisions
-#pragma omp parallel for
+#pragma omp parallel for reduction(+: p_rt)
   for(unsigned int i=0; i<choices.n_elem; i++){
     
     double p_local = pulse_trial_lik(choices(i), rt(i), stimuli[i],
@@ -256,11 +256,11 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
     
 #pragma omp critical
 {
-  p_rt[i] = log(p_local);
+  p_rt += log(p_local);
 }   
   }
   
-  return -sum(p_rt);
+  return -p_rt;
   
 }
 
