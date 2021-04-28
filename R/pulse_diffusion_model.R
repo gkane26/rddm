@@ -95,7 +95,7 @@ check_pdm_constraints <- function(){
   if ("st0" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("lambda" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (lambda < -1) | (lambda > 1)]) # lambda
+    checks = checks + sum(private$par_matrix[, (lambda < -100) | (lambda > 100)]) # lambda
   if ("aprime" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
@@ -250,8 +250,8 @@ init_pulse_model = function(dat,
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
   values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, 0, .25, 1)
-  lower = c(-10, .1, 1e-10, .2, -10, 0, 0, 0, -1, 0, 0, 1e-10, 1e-10)
-  upper = c(10, 10, 1, .8, 10, 10, .2, .2, 1, 1, 5, 2, 5)
+  lower = c(-100, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
+  upper = c(100, 10, 1, .8, 10, 100, .2, .2, 100, 1, 5, 2, 5)
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
