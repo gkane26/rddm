@@ -88,6 +88,7 @@ ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, 
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param dx numeric; size of evidence bins, default = .05
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -95,8 +96,8 @@ ddm_integral_fpt <- function(v, a, t0, z = .5, dc = 0, sv = 0, sz = 0, st0 = 0, 
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, dx = .01, bounds = 0L) {
-    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds)
+pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, v_scale = 1, dt = .001, dx = .01, bounds = 0L) {
+    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, v_scale, dt, dx, bounds)
 }
 
 #' Get pulse model likelihood for a given trial
@@ -117,6 +118,7 @@ pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, s
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param dx numeric; size of evidence bins, default = .05
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -124,8 +126,8 @@ pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, s
 #' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, dx = .05, bounds = 0L) {
-    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, dx, bounds)
+pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, v_scale = 1, dt = .001, dx = .05, bounds = 0L) {
+    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, v_scale, dt, dx, bounds)
 }
 
 #' Get pulse model negative log likelihood for a set of trials
@@ -149,6 +151,7 @@ pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, z = 0.5, dc = 0, sv 
 #' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
 #' @param tc numeric; time constant of collapse, either single value or vector for each trial, default = .25
 #' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .002
 #' @param dx numeric; size of evidence bins, default = .05
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
@@ -157,8 +160,8 @@ pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, z = 0.5, dc = 0, sv 
 #' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, stimuli, v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, dt = .001, dx = .05, bounds = 0L, n_threads = 1L) {
-    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, dt, dx, bounds, n_threads)
+pulse_nll <- function(choices, rt, stimuli, v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE, v_scale = 1, dt = .001, dx = .05, bounds = 0L, n_threads = 1L) {
+    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, check_pars, v_scale, dt, dx, bounds, n_threads)
 }
 
 #' Get predicted behavior from pulse model
@@ -278,15 +281,16 @@ sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, a
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 1
 #' @param tc numeric; time constant of collapse, default = .25
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' 
-#' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+#' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 #' 
 #' @export
-sim_pulse <- function(n, stimulus, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, dt = .001, bounds = 0L, n_threads = 1L) {
-    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, bounds, n_threads)
+sim_pulse <- function(n, stimulus, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, s = 1, lambda = 0, aprime = 0, kappa = 0, tc = .25, v_scale = 1, dt = .001, bounds = 0L, n_threads = 1L) {
+    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimulus, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, v_scale, dt, bounds, n_threads)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -306,15 +310,16 @@ sim_pulse <- function(n, stimulus, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz
 #' @param aprime numeric vector; degree of collapse, default = 0
 #' @param kappa numeric vector; slope of collapse, default = 1
 #' @param tc numeric vector; time constant of collapse, default = .25
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 #' @param check_pars bool; if True (default) check parameter vector lengths and default values
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' 
-#' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+#' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 #' 
 #' @export
-sim_pulse_vec <- function(n, stimuli, v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, dt = .001, bounds = 0L, check_pars = TRUE, n_threads = 1L) {
-    .Call('_rddm_sim_pulse_vec', PACKAGE = 'rddm', n, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, dt, bounds, check_pars, n_threads)
+sim_pulse_vec <- function(n, stimuli, v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, s = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, v_scale = 1, dt = .001, bounds = 0L, check_pars = TRUE, n_threads = 1L) {
+    .Call('_rddm_sim_pulse_vec', PACKAGE = 'rddm', n, stimuli, v, a, t0, z, dc, sv, st0, sz, s, lambda, aprime, kappa, tc, v_scale, dt, bounds, check_pars, n_threads)
 }
 

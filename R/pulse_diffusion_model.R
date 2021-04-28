@@ -154,12 +154,46 @@ set_pdm_objective <- function(objective="fp") {
 #' 
 #' @keywords internal
 #' 
-predict_pulse_model = function(pars=NULL, n=10000, method="euler"){
+predict_pulse_model = function(pars=NULL, n=10000, method="euler", ...){
+  
+  browser()
   
   if(is.null(pars)) pars = self$solution$pars
   private$set_params(pars)
   
-  do.call(pulse_predict, c(n=n, list(stim_seq=dat[[private$stim_var]]), as.list(private$par_matrix), use_weibull_bound=private$use_weibull_bound, ...))
+  if (method == "euler") {
+    
+    # do.call(pulse_predict, c(n=n, list(stimuli=private$stim_mat_list), as.list(private$par_matrix), bounds=private$bounds, ...))
+    d_pred = data.table()
+    
+    for (i in 1:length(private$stim_mat_list)) {
+      
+      this_sim = do.call(sim_pulse, c(n=n, list(stimuli=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
+      d_pred = rbind(d_pred, setDT(this_sim))
+      
+    }
+    
+    d_pred
+    
+  } else if (method == "fp") {
+    
+    d_pred = data.table()
+    
+    for (i in 1:length(private$stim_mat_list)) {
+      
+      this_fpt = do.call(pulse_fp_fpt, c(list(stimulus=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
+      this_sim = setDT(fpt_to_sim(this_fpt, n=n))
+      d_pred = rbind(d_pred, this_sim)
+      
+    }
+    
+    d_pred
+    
+    
+  } else {
+    
+    stop("method not implemented")
+  }
 }
 
 

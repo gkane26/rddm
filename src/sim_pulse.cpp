@@ -1,6 +1,9 @@
 #include "RcppArmadillo.h"
 #include "omp.h"
 #include "bounds.h"
+
+#include <sys/resource.h>
+
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
@@ -23,24 +26,24 @@ using namespace Rcpp;
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 1
 //' @param tc numeric; time constant of collapse, default = .25
+//' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' 
-//' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+//' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 //' 
 //' @export
 // [[Rcpp::export]]
 List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
-                    double z=.5, double dc=0, double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
-                    double aprime=0, double kappa=0, double tc=.25, 
-                    double dt=.001, int bounds=0, int n_threads=1){
+               double z=.5, double dc=0, double sv=0, double st0=0, double sz=0, double s=1, double lambda=0,
+               double aprime=0, double kappa=0, double tc=.25, 
+               double v_scale=1, double dt=.001, int bounds=0, int n_threads=1){
   
-  v *= 100;
-  sv *= 100;
-  
-  omp_set_num_threads(n_threads);
   int n_on_thread = n / n_threads;
+  
+  v *= v_scale;
+  sv *= v_scale;
   
   arma::vec rt_full = arma::zeros(n),
     response_full = arma::zeros(n),
@@ -65,7 +68,7 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
   
   double dW = s * sqrt(dt);
   
-#pragma omp parallel for
+#pragma omp parallel for num_threads(n_threads)
   for (int i=0; i<n_threads; i++){
     
     arma::vec t0_var = t0 + st0 * (arma::randu(n_on_thread)-.5),
@@ -74,13 +77,13 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
       rt = arma::zeros(n_on_thread);
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
     arma::mat accumulators(n_on_thread, stimulus.n_cols+1);
-    accumulators.fill(arma::datum::nan); //= arma::zeros(n_on_thread, stimulus.n_cols+1);
+    accumulators.fill(arma::datum::nan);
     accumulators.col(0) = x;
     unsigned int step = 0, n_drift = n_on_thread;
     
     while((n_drift > 0) & (step < stimulus.n_cols)){
-      v_var = v + sqrt(sv)*arma::randn(n_drift);
-      x(still_drift) += dW*arma::randn(n_drift) + ((v_var+dc)*stimulus(0, step) + (-v_var+dc)*stimulus(1, step) + lambda*x(still_drift)) * dt;
+      v_var(still_drift) = v + sqrt(sv)*arma::randn(n_drift);
+      x(still_drift) += dW*arma::randn(n_drift) + ((v_var(still_drift)+dc)*stimulus(0, step) + (-v_var(still_drift)+dc)*stimulus(1, step) + lambda*x(still_drift)) * dt;
       rt(still_drift) += dt;
       still_drift = arma::find(abs(x) < bound(step));
       n_drift = still_drift.n_elem;
@@ -93,14 +96,11 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
     response(arma::find(x >= final_bound)).fill(1);
     response(arma::find(x <= -final_bound)).fill(0);
     
-#pragma omp critical
-{
-  rt_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = rt;
-  response_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = response;
-  x_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = x;
-  accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
-}
-
+    rt_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = rt;
+    response_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = response;
+    x_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = x;
+    accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
+    
   }
   
   DataFrame sim = DataFrame::create(Named("response") = response_full, Named("rt") = rt_full+t0+st0*(arma::randu(n)-.5), Named("evidence") = x_full);
@@ -126,24 +126,28 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
 //' @param aprime numeric vector; degree of collapse, default = 0
 //' @param kappa numeric vector; slope of collapse, default = 1
 //' @param tc numeric vector; time constant of collapse, default = .25
+//' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
 //' @param check_pars bool; if True (default) check parameter vector lengths and default values
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' 
-//' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+//' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 //' 
 //' @export
 // [[Rcpp::export]]
-DataFrame sim_pulse_vec(int n, List stimuli, arma::vec v, arma::vec a, arma::vec t0,
-                        arma::vec z=0, arma::vec dc=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0, arma::vec lambda=0,
-                        arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, 
-                        double dt=.001, int bounds=0, bool check_pars=true, int n_threads=1){
+List sim_pulse_vec(int n, List stimuli, arma::vec v, arma::vec a, arma::vec t0,
+                   arma::vec z=0, arma::vec dc=0, arma::vec sv=0, arma::vec st0=0, arma::vec sz=0, arma::vec s=0, arma::vec lambda=0,
+                   arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, 
+                   double v_scale=1, double dt=.001, int bounds=0, bool check_pars=true, int n_threads=1){
   
-  omp_set_num_threads(n_threads);
-
+  v *= v_scale;
+  sv *= v_scale;
+  
   if (check_pars) {
-    arma::uvec lens = {stimuli.length(), v.n_elem, a.n_elem, t0.n_elem, z.n_elem, dc.n_elem, sv.n_elem, st0.n_elem, sz.n_elem, s.n_elem, lambda.n_elem, aprime.n_elem, kappa.n_elem, tc.n_elem};
+    arma::uvec lens = {stimuli.length(), v.n_elem, a.n_elem, t0.n_elem, z.n_elem,
+                       dc.n_elem, sv.n_elem, st0.n_elem, sz.n_elem, s.n_elem,
+                       lambda.n_elem, aprime.n_elem, kappa.n_elem, tc.n_elem};
     if (v.n_elem < lens.max()) {
       v = arma::zeros(lens.max()) + v(0);
     }
@@ -192,29 +196,101 @@ DataFrame sim_pulse_vec(int n, List stimuli, arma::vec v, arma::vec a, arma::vec
   }
   
   int total_n = n * stimuli.length();
-  arma::vec rt = arma::zeros(total_n),
-    response = arma::zeros(total_n),
-    evidence = arma::zeros(total_n);
+  arma::vec trial_full = arma::zeros(total_n),
+    rt_full = arma::zeros(total_n),
+    response_full = arma::zeros(total_n),
+    x_full = arma::zeros(total_n);
   
-#pragma omp parallel for
-  for (int i=0; i<stimuli.length(); i++) {
+  arma::field<arma::mat> stimuli_field = as<arma::field<arma::mat>>(stimuli);
+  int max_stimulus_len = 0;
+  for (int i=0; i<stimuli_field.n_elem; i++) {
+    int this_cols = stimuli_field(i).n_cols;
+    max_stimulus_len = std::max(max_stimulus_len, this_cols);
+  }
+
+  // arma::field<arma::mat> stimuli_field(stimuli.length());
+  // int max_stimulus_len = 0;
+  // for(int i=0; i<stimuli.length(); i++) {
+  //   arma::mat stimulus_mat = as<arma::mat>(stimuli[i]);
+  // 
+  //   if (stimulus_mat.n_rows == 1) {
+  //     stimulus_mat = arma::join_vert(stimulus_mat, arma::zeros(stimulus_mat.n_cols));
+  //   }
+  // 
+  //   int this_cols = stimulus_mat.n_cols;
+  //   max_stimulus_len = std::max(max_stimulus_len, this_cols);
+  // 
+  //   stimuli_field(i) = stimulus_mat;
+  // }
+  
+  Rcout << "slices = " << stimuli_field.n_slices << 
+    " // columns = " << stimuli_field.n_cols << 
+      " // rows = " << stimuli_field.n_rows << 
+        " // elements = " << stimuli_field.n_elem << 
+          " // max matrix length = " << max_stimulus_len << 
+          "\n";
+  
+  arma::mat accumulators_full(total_n, max_stimulus_len+1);
+  accumulators_full.fill(arma::datum::nan);
+  
+#pragma omp parallel for num_threads(n_threads)
+  for (int i=0; i<stimuli_field.n_elem; i++) {
     
-    DataFrame sim_results = sim_pulse(n, stimuli[i], v(i), a(i), t0(i),
-                                      z(i), dc(i), sv(i), st0(i), sz(i), s(i), lambda(i),
-                                      aprime(i), kappa(i), tc(i), 
-                                      dt, bounds);
+    arma::mat stimulus = stimuli_field(i);
+    
+    // get boundary vector
+    arma::vec tvec = arma::regspace(dt, dt, stimulus.n_cols*dt+dt);
+    arma::vec bound;
+    if(bounds == 2) {
+      bound = weibull_bound(tvec, a(i), aprime(i), kappa(i), tc(i));
+    } else if(bounds == 1) {
+      bound = hyperbolic_ratio_bound(tvec, a(i), kappa(i), tc(i));
+    } else {
+      bound = rep(a(i)/2, stimulus.n_cols);
+    }
+    
+    double dW = s(i) * sqrt(dt);
+    
+    arma::vec t0_var = t0(i) + st0(i) * (arma::randu(n)-.5),
+      x = a(i)/2*(z(i)-0.5) + sqrt(sz(i)) * arma::randn(n),
+      v_var = arma::zeros(n),
+      rt = arma::zeros(n);
+    arma::uvec still_drift = arma::linspace<arma::uvec>(0, n-1, n);
+    arma::mat accumulators(n, stimulus.n_cols+1);
+    accumulators.fill(arma::datum::nan);
+    accumulators.col(0) = x;
+    unsigned int step = 0, n_drift = n;
+    
+    while((n_drift > 0) & (step < stimulus.n_cols)){
+      v_var(still_drift) = v(i) + sqrt(sv(i)) * arma::randn(n_drift);
+      x(still_drift) += dW*arma::randn(n_drift) + ((v_var(still_drift)+dc(i))*stimulus(0, step) + (-v_var(still_drift)+dc(i))*stimulus(1, step) + lambda(i)*x(still_drift)) * dt;
+      rt(still_drift) += dt;
+      still_drift = arma::find(abs(x) < bound(step));
+      n_drift = still_drift.n_elem;
+      step++;
+      accumulators.col(step) = x;
+    }
+    
+    double final_bound = bound(bound.n_elem-1);
+    arma::vec response = -arma::ones(n);
+    response(arma::find(x >= final_bound)).fill(1);
+    response(arma::find(x <= -final_bound)).fill(0);
     
     arma::span this_span = arma::span(i*n, i*n+n-1);
-    
-    response(this_span) = as<arma::vec>(sim_results["response"]);
-    rt(this_span) = as<arma::vec>(sim_results["rt"]);
-    evidence(this_span) = as<arma::vec>(sim_results["evidence"]);
+    trial_full(this_span).fill(i+1);
+    rt_full(this_span) = rt + t0(i) + st0(i) * (arma::randu(n)-0.5);
+    response_full(this_span) = response;
+    x_full(this_span) = x;
+    accumulators_full(this_span, arma::span(0, stimulus.n_cols)) = accumulators;
     
   }
   
-  return DataFrame::create(Named("response") = response,
-                           Named("rt") = rt,
-                           Named("evidence") = evidence);
+  DataFrame sim = DataFrame::create(Named("trial") = trial_full,
+                                    Named("response") = response_full,
+                                    Named("rt") = rt_full,
+                                    Named("evidence") = x_full);
+  
+  return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
   
 }
 

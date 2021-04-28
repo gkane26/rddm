@@ -84,6 +84,9 @@ DataFrame pulse_predict(int n, List stimuli,
   
 #pragma omp parallel for
   for(unsigned int i=0; i<stim_length; i++){
+    
+    Rcout << i << "\n";
+    
     DataFrame this_sim = sim_pulse(n, stimuli[i], v(i), a(i), t0(i), z(i), dc(i), sv(i), st0(i), sz(i), s(i),
                                    lambda(i), aprime(i), kappa(i), tc(i),
                                    dt, bounds, n_threads);

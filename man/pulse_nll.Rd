@@ -22,6 +22,7 @@ pulse_nll(
   kappa = 0L,
   tc = 0L,
   check_pars = TRUE,
+  v_scale = 1,
   dt = 0.001,
   dx = 0.05,
   bounds = 0L,
@@ -60,6 +61,8 @@ pulse_nll(
 \item{tc}{numeric; time constant of collapse, either single value or vector for each trial, default = .25}
 
 \item{check_pars}{logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true}
+
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
 
 \item{dt}{numeric; time step of simulation, default = .002}
 

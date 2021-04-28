@@ -17,7 +17,7 @@ pulse_stimulus(
 \arguments{
 \item{up_sequence}{string; string timepoint by timepoint evidence to upper boundary}
 
-\item{down_sequence}{string; string timepoint by timepoint evidence to upper boundary (optional)}
+\item{down_sequence}{string; string timepoint by timepoint evidence to lower boundary (optional)}
 
 \item{pattern}{string; pattern to separate timepoints. Default = ""}
 
