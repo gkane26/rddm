@@ -90,6 +90,8 @@ check_pdm_constraints <- function(){
   checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
+  else
+    z = 0.5
   if ("sz" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
