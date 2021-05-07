@@ -253,7 +253,7 @@ init_pulse_model = function(dat,
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
   values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, 0, .25, 1)
   lower = c(-100, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
-  upper = c(100, 10, 1, .8, 10, 100, .2, .2, 100, 1, 5, 2, 5)
+  upper = c(100, 10, 1, .8, 100, 100, .2, .2, 100, 1, 5, 2, 5)
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]

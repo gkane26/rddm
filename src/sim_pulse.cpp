@@ -44,6 +44,7 @@ List sim_pulse(int n, arma::mat stimulus, double v, double a, double t0,
   
   v *= v_scale;
   sv *= v_scale;
+  dc *= v_scale;
   
   arma::vec rt_full = arma::zeros(n),
     response_full = arma::zeros(n),
@@ -143,6 +144,7 @@ List sim_pulse_vec(int n, List stimuli, arma::vec v, arma::vec a, arma::vec t0,
   
   v *= v_scale;
   sv *= v_scale;
+  dc *= v_scale; 
   
   if (check_pars) {
     arma::uvec lens = {stimuli.length(), v.n_elem, a.n_elem, t0.n_elem, z.n_elem,

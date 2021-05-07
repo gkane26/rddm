@@ -41,6 +41,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0, double
   // scale drift rate
   v *= v_scale;
   sv *= v_scale;
+  dc *= v_scale;
   
   // make bins
   int n_x_breaks = round(a / dx);
