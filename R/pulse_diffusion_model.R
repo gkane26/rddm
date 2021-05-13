@@ -16,16 +16,16 @@ pulse_fp_obj <- function(pars,
   
   if(debug){
     cat("pars = ")
-    cat(pars, sep=", ")
+    cat(round(pars, 3), sep=", ")
     cat(" // ")
   }
   
   private$set_params(pars)
   if(check_constraints){
     if(!private$check_par_constraints()){
-      if(debug)
-        cat("nll =", nll, "\n")
-      return(1e10)
+      nll = 1e10
+      if(debug) cat("nll =", nll, "\n")
+      return(nll)
     }
   }
   
@@ -36,6 +36,8 @@ pulse_fp_obj <- function(pars,
                              as.list(private$par_matrix),
                              bounds=private$bounds,
                              ...))
+  
+  if (is.nan(nll)) browser()
   
   if(debug) cat("nll =", round(nll, 3), "\n")
   
@@ -86,12 +88,15 @@ set_pm_parameters = function(pars){
 
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
-  checks = sum(private$par_matrix[, a <= 0]) # a
+  checks = sum(private$par_matrix[, (v < 0)]) # v
+  checks = checks + sum(private$par_matrix[, a <= 0]) # a
   checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   else
     z = 0.5
+  if ("sv" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (sv < 0)]) # sv
   if ("sz" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
@@ -150,34 +155,42 @@ set_pdm_objective <- function(objective="fp") {
 #' @param pars numeric vector; vector of parameters. If NULL, uses model$solution$pars.
 #' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
 #' @param method string; "euler" for euler-maruyama simulation or "fp" for Fokker-Planck method
+#' @param stim_list list; new list of stimulus matrices
+#' @param trial_code integer vector; list of trial indexes to which the new stimuli are associated with
 #' @param ... additional arguments passed to method (either \code{sim_pulse} or \code{pulse_fp_fpt})
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
 #' 
 #' @keywords internal
 #' 
-predict_pulse_model = function(pars=NULL, n=10000, method="euler", ...){
+predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, trial_code=NULL, ...){
   
-  browser()
+  if (is.null(stim_list)) stop("must provide new stimulus for simulation")
+  if ((length(stim_list) != length(private$stim_mat_list)) & (is.null(trial_code))) {
+    stop("new stimulus list is not equal to number of trials")
+  } else if (is.null(trial_code)) {
+    trial_code = 1:length(stim_list)
+  }
   
   if(is.null(pars)) pars = self$solution$pars
   private$set_params(pars)
   
   if (method == "euler") {
     
-    # do.call(pulse_predict, c(n=n, list(stimuli=private$stim_mat_list), as.list(private$par_matrix), bounds=private$bounds, ...))
     d_pred = data.table()
     
-    for (i in 1:length(private$stim_mat_list)) {
+    for (i in 1:length(stim_list)) {
       
-      this_sim = do.call(sim_pulse, c(n=n, list(stimuli=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
-      d_pred = rbind(d_pred, setDT(this_sim))
+      this_sim = do.call(sim_pulse, c(n=n, list(stimulus=stim_list[[i]]), as.list(private$par_matrix[trial_code[i]]), bounds=private$bounds, ...))
+      d_pred = rbind(d_pred, setDT(this_sim$behavior))
       
     }
     
     d_pred
     
   } else if (method == "fp") {
+    
+    stop("NOT YET IMPLEMENTED")
     
     d_pred = data.table()
     
@@ -251,9 +264,14 @@ init_pulse_model = function(dat,
   
   # set default parameter values
   all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
-  values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0, 0, .25, 1)
-  lower = c(-100, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
+  values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0.5, 1, .25, 1)
+  lower = c(0, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
   upper = c(100, 10, 1, .8, 100, 100, .2, .2, 100, 1, 5, 2, 5)
+  
+  check_default_values = c("sv", "sz", "st0")
+  for (c in check_default_values) {
+    if ((c %in% include) | (c %in% names(depends_on)) | (c %in% names(as_function))) values[all_pars == c] = 0.1
+  }
   
   # check all supplied parameters, remove if not in all_pars
   rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
