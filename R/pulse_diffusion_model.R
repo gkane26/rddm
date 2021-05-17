@@ -88,15 +88,15 @@ set_pm_parameters = function(pars){
 
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
-  checks = sum(private$par_matrix[, (v < 0)]) # v
-  checks = checks + sum(private$par_matrix[, a <= 0]) # a
-  checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
+  checks = sum(private$par_matrix[, (v < 0) | (v > 100)]) # v
+  checks = checks + sum(private$par_matrix[, (a <= 0) | (a > 10)]) # a
+  checks = checks + sum(private$par_matrix[, (t0 < 0) | (t0 > 1)]) # t0
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   else
     z = 0.5
   if ("sv" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sv < 0)]) # sv
+    checks = checks + sum(private$par_matrix[, (sv < 0) | (sv > 100)]) # sv
   if ("sz" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
