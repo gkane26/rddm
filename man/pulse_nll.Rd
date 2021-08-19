@@ -26,7 +26,7 @@ pulse_nll(
   check_pars = TRUE,
   v_scale = 1,
   dt = 0.001,
-  dx = 0.05,
+  xbins = 100L,
   bounds = 0L,
   urgency = 0L,
   n_threads = 1L
@@ -73,7 +73,7 @@ pulse_nll(
 
 \item{dt}{numeric; time step of simulation, default = .002}
 
-\item{dx}{numeric; size of evidence bins, default = .05}
+\item{xbins}{integer; number of evidence bins, default = 100}
 
 \item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
 

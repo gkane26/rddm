@@ -23,7 +23,7 @@ pulse_fp_fpt(
   udelay = 0,
   v_scale = 1,
   dt = 0.001,
-  dx = 0.01,
+  xbins = 100L,
   bounds = 0L,
   urgency = 0L
 )
@@ -65,7 +65,7 @@ pulse_fp_fpt(
 
 \item{dt}{numeric; time step of simulation, default = .001}
 
-\item{dx}{numeric; size of evidence bins, default = .05}
+\item{xbins}{numeric; number of evidence bins, default = 100}
 
 \item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
 

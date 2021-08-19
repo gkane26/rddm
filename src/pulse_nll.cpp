@@ -1,5 +1,6 @@
 #include "RcppArmadillo.h"
 #include "bounds.h"
+#include "urgency.h"
 #include "omp.h"
 #include "RcppArmadilloExtensions/sample.h"
 #include "unistd.h"
@@ -28,7 +29,7 @@ using namespace Rcpp;
 //' @param umag numeric; urgency magnitude, default = 0;
 //' @param udelay numeric; urgency delay, default = 0;
 //' @param dt numeric; time step of simulation, default = .001
-//' @param dx numeric; size of evidence bins, default = .05
+//' @param xbins numeric; number of evidence bins, default = 100
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
 //' @param urgency int; 0 for none, 1 for linear, 2 for logistic
 //'
@@ -40,14 +41,14 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
                        double uslope=0, double umag=0, double udelay=0,
-                       double v_scale=1, double dt=.001, double dx=.01, int bounds=0, int urgency=0){
+                       double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   // scale drift rate
   sv *= v_scale;
   dc *= v_scale;
   
   // make bins
-  int n_x_breaks = round(a / dx);
+  int n_x_breaks = xbins;
   if(n_x_breaks % 2 == 1)
     n_x_breaks++;
   
@@ -91,12 +92,9 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
   // get urgency signal
   arma::vec gamma(tvec.n_elem);
   if (urgency == 1) {
-    gamma = uslope * (tvec - udelay);
-    gamma.clamp(1, arma::datum::inf);
+    gamma = linear_urgency(tvec, uslope, udelay, umag);
   } else if (urgency == 2) {
-    arma::vec s1 = arma::exp(uslope * (tvec - udelay));
-    double s2 = exp(-uslope * udelay);
-    gamma = (umag*s1 / (1 + s1)) + (1 + (1-umag)*s2) / (1 + s2);
+    gamma = logistic_urgency(tvec, uslope, udelay, umag);
   } else {
     gamma.fill(1);
   }
@@ -112,9 +110,9 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
     up_bound_index = arma::min(arma::find(bin_breaks >= bound(t)))+1;
     
     // get transition matrix
-    double sigma2 = gamma(t)*gamma(t)*s*s*dt + gamma(t)*sv*abs(stimulus(0, t)*(1+dc))*dt*dt + gamma(t)*sv*abs(stimulus(1, t)*(-1+dc))*dt*dt;
+    double sigma2 = gamma(t)*gamma(t)*s*s*dt + gamma(t)*sv*abs(stimulus(0, t)*(v_scale+dc))*dt*dt + gamma(t)*sv*abs(stimulus(1, t)*(-v_scale+dc))*dt*dt;
     for(unsigned int j=1; j<t_mat.n_rows-1; j++){
-      double mu = exp(lambda*dt)*bin_centers(j-1) + gamma(t)*(((1+dc)*stimulus(0, t) + (-1+dc)*stimulus(1, t)) * dt);
+      double mu = exp(lambda*dt)*bin_centers(j-1) + gamma(t)*(((v_scale+dc)*stimulus(0, t) + (-v_scale+dc)*stimulus(1, t)) * dt);
       p_breaks = arma::normcdf(bin_breaks, mu, sqrt(sigma2));
       t_mat(0, j) = p_breaks(0);
       t_mat(arma::span(1, t_mat.n_rows-2), j) = arma::diff(p_breaks);
@@ -173,7 +171,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
 //' @param udelay numeric; urgency delay, default = 0;
 //' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
-//' @param dx numeric; size of evidence bins, default = .05
+//' @param xbins numeric; number of evidence bins, default = 100
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
 //' @param urgency int; 0 for none, 1 for linear, 2 for logistic
 //'
@@ -187,7 +185,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
                        double uslope=0, double umag=0, double udelay=0,
-                       double v_scale=1, double dt=.001, double dx=.05, int bounds=0, int urgency=0){
+                       double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   arma::mat fpt_density = pulse_fp_fpt(stimulus,
                                        a, t0, s,
@@ -195,7 +193,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
                                        sv, st0, sz,
                                        lambda, aprime, kappa, tc,
                                        uslope, umag, udelay,
-                                       v_scale, dt, dx, bounds, urgency);
+                                       v_scale, dt, xbins, bounds, urgency);
   
   return fpt_density(rt/dt-1, abs(1-choice));
   
@@ -227,7 +225,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 //' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .002
-//' @param dx numeric; size of evidence bins, default = .05
+//' @param xbins integer; number of evidence bins, default = 100
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
 //' @param urgency int: 0 for none, 1 for linear, 2 for logistic
 //' @param n_threads int; number of threads (trials) to run in parallel
@@ -242,7 +240,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
                  arma::vec sv=0, arma::vec st0=0, arma::vec sz=0,
                  arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0,
                  arma::vec uslope=0, arma::vec umag=0, arma::vec udelay=0, bool check_pars=true,
-                 double v_scale=1, double dt=.001, double dx=.05, int bounds=0, int urgency=0, int n_threads=1){
+                 double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   
@@ -296,7 +294,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
                                      sv(i), st0(i), sz(i),
                                      lambda(i), aprime(i), kappa(i), tc(i),
                                      uslope(i), umag(i), udelay(i),
-                                     v_scale, dt, dx, bounds, urgency);
+                                     v_scale, dt, xbins, bounds, urgency);
     
     if(p_local<1e-10)
       p_local=1e-10;

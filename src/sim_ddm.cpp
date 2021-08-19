@@ -1,6 +1,7 @@
 #include "RcppArmadillo.h"
 #include "omp.h"
 #include "bounds.h"
+#include "urgency.h"
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
@@ -60,14 +61,12 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
     bound = rep(a/2, tvec.n_elem);
   }
   
+  // get urgency signal
   arma::vec gamma(tvec.n_elem);
   if (urgency == 1) {
-    gamma = uslope * (tvec - udelay);
-    gamma.clamp(1, arma::datum::inf);
+    gamma = linear_urgency(tvec, uslope, udelay, umag);
   } else if (urgency == 2) {
-    arma::vec s1 = arma::exp(uslope * (tvec - udelay));
-    double s2 = exp(-uslope * udelay);
-    gamma = (umag*s1 / (1 + s1)) + (1 + (1-umag)*s2) / (1 + s2);
+    gamma = logistic_urgency(tvec, uslope, udelay, umag);
   } else {
     gamma.fill(1);
   }

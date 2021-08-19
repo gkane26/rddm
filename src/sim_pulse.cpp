@@ -3,6 +3,7 @@
 #include "RcppZiggurat.h"
 #include "omp.h"
 #include "bounds.h"
+#include "urgency.h"
 #include "fast_rand.h"
 
 using namespace Rcpp;
@@ -82,12 +83,9 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
   // get urgency signal
   arma::vec gamma(tvec.n_elem);
   if (urgency == 1) {
-    gamma = uslope * (tvec - udelay);
-    gamma.clamp(1, arma::datum::inf);
+    gamma = linear_urgency(tvec, uslope, udelay, umag);
   } else if (urgency == 2) {
-    arma::vec s1 = arma::exp(uslope * (tvec - udelay));
-    double s2 = exp(-uslope * udelay);
-    gamma = (umag*s1 / (1 + s1)) + (1 + (1-umag)*s2) / (1 + s2);
+    gamma = logistic_urgency(tvec, uslope, udelay, umag);
   } else {
     gamma.fill(1);
   }
@@ -123,7 +121,7 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
       stim1 = stim1(trials_drifting);
       
       // v_var(still_drift) = 1 + sqrt(sv)*arma::randn(still_drift.n_elem);
-      v_var(still_drift) = 1 + sqrt(sv) * zrandn(still_drift.n_elem);
+      v_var(still_drift) = v_scale + sqrt(sv) * zrandn(still_drift.n_elem);
       
       // x(still_drift) += (gamma(step) * dW * arma::randn(still_drift.n_elem)) +
       //   (gamma(step) * ((v_var(still_drift) + dc) % stim0 * dt)) +
@@ -148,6 +146,7 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
     response.fill(arma::datum::nan);
     response(arma::find(x >= final_bound)).fill(1);
     response(arma::find(x <= -final_bound)).fill(0);
+    rt(arma::find_nonfinite(response)).fill(arma::datum::nan);
     
     arma::span thread_span = arma::span(i * n_on_thread, i * n_on_thread + n_on_thread - 1);
     rt_full(thread_span) = rt;
