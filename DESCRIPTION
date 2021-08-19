@@ -19,7 +19,7 @@ Imports:
     stringr,
     dqrng
 Remotes:
-    github::gkane26/modelfitr
+    github::gkane26/modelfitr,
     github::gkane26/RcppZiggurat@interfaces
 LinkingTo:
     Rcpp,
