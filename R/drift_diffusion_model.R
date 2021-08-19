@@ -315,14 +315,14 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
 #'
 #' @param pars numeric vector; vector of parameters. If NULL, uses model$solution$pars.
 #' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
-#' @param method string; "euler" for euler-maruyama simulation or "integral" for integral equation method
+#' @param method string; "rtdists" for rtdists package (rdiffusion), "euler" for euler-maruyama simulation, or "integral" for integral equation method
 #' @param ... additional arguments passed to \code{sim_ddm}
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
 #' 
 #' @keywords internal
 #' 
-predict_diffusion_model = function(pars=NULL, n=10000, method="euler", ...){
+predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
   
   if(is.null(pars)) pars = self$solution$pars
   private$set_params(pars)
@@ -330,11 +330,26 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="euler", ...){
   pars_only_mat = copy(private$par_matrix)
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
   
+  if (method == "rtdists" & private$bounds > 0) {
+    warning("can't use rtdists method with collapsing bound. Using integral method instead.")
+    method = "integral"
+  }
+  
   all_sim = data.table()
   
   if (pars_only_mat[, .N] < self$data[, .N]) {
     
     for(i in 1:pars_only_mat[, .N]) {
+      
+      if (method == "rtdists") {
+        this_sim = setDT(do.call(rtdists::rdiffusion, c(list(n=n),
+                                                         as.list(pars_only_mat[i]),
+                                                         as.list(private$fixed),
+                                                         maxt=private$max_time)))
+        this_sim[, response := ifelse(response == "upper", 1, 0)]
+        this_sim[, rt := round(rt, 3)]
+        setcolorder(this_sim, c("response", "rt"))
+      }
       
       if (method == "euler") {
         this_sim = do.call(sim_ddm, c(list(n=n),
@@ -342,7 +357,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="euler", ...){
                                       as.list(private$fixed),
                                       max_time=private$max_time,
                                       bounds=private$bounds,
-                                      ...))
+                                      ...))$behavior
       } else if (method == "integral") {
         
         this_fpt = do.call(ddm_integral_fpt, c(as.list(pars_only_mat[i]),

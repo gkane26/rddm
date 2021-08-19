@@ -13,6 +13,10 @@ model$predict(pars=NULL, n=10000, ...)
 
 \item{method}{string; "euler" for euler-maruyama simulation or "fp" for Fokker-Planck method}
 
+\item{stim_list}{list; new list of stimulus matrices}
+
+\item{trial_code}{integer vector; list of trial indexes to which the new stimuli are associated with}
+
 \item{...}{additional arguments passed to method (either \code{sim_pulse} or \code{pulse_fp_fpt})}
 }
 \value{

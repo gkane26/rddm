@@ -26,6 +26,47 @@ using namespace Rcpp;
 //' @rdname bounds
 //' @export
 // [[Rcpp::export]]
+arma::vec linear_bound(arma::vec t, double a, double kappa=0, double tc=0){
+  arma::vec t_collapse = t - tc;
+  t_collapse.clamp(0, arma::datum::inf);
+  arma::vec bound = (a / 2) - kappa * t_collapse;
+  bound.clamp(0, a/2);
+  return bound;
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
+arma::mat linear_bound_vec(arma::vec t, arma::vec a, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true){
+  
+  if (check_pars) {
+    arma::uvec lens = {a.n_elem, kappa.n_elem, tc.n_elem};
+    if (a.n_elem < lens.max()) {
+      a = arma::zeros(lens.max()) + a(0);  
+    }
+    if (kappa.n_elem < lens.max()) {
+      kappa = arma::zeros(lens.max()) + kappa(0);
+    }
+    if (tc.n_elem < lens.max()) {
+      tc = arma::zeros(lens.max()) + tc(0);
+    }
+  }
+  
+  arma::mat bmat(t.n_elem, a.n_elem);
+  for (unsigned int i=0; i < a.n_elem; i++) {
+    arma::vec t_collapse = t - tc(i);
+    t_collapse.clamp(0, arma::datum::inf);
+    bmat.col(i) = (a(i) / 2) - kappa(i) * t_collapse;
+    bmat.col(i).clamp(0, a(i) / 2);
+  }
+  
+  return bmat;
+  
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
 arma::vec hyperbolic_ratio_bound(arma::vec t, double a, double kappa=0, double tc=.25){
   return a / 2 * (1 - kappa * (t / (t + tc)));
 }

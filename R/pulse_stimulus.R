@@ -9,11 +9,12 @@
 #' @param isi numeric; inter-pulse interval, default = .1
 #' @param pre_stim numeric; time before pulse within stimulus bin. default = 0
 #' @param dt numeric; timestep for simulation, default = .001
+#' @param as_array logical; if True, return as 3d array (2 x timepoints x trials)
 #'
 #' @return stimulus train
 #'
 #' @export
-pulse_stimulus <- function(up_sequence, down_sequence=NULL, pattern="", dur=0.01, isi=0.1, pre_stim=0, dt=0.001){
+pulse_stimulus <- function(up_sequence, down_sequence=NULL, pattern="", dur=0.01, isi=0.1, pre_stim=0, dt=0.001, as_array=F){
   
   up_vec = stringr::str_split(up_sequence, pattern)
   up_vec = lapply(up_vec, as.numeric)
@@ -27,11 +28,19 @@ pulse_stimulus <- function(up_sequence, down_sequence=NULL, pattern="", dur=0.01
     down_stim_seq = lapply(down_vec, pulse_trial_stimulus, dur=dur, isi=isi, pre_stim=pre_stim, dt=dt)
   }
   
-  stim_mat_list = list()
-  for (i in 1:length(up_stim_seq)) {
-    stim_mat_list[[i]] = rbind(up_stim_seq[[i]], down_stim_seq[[i]])
+  if (as_array) {
+    stim_lengths = sapply(up_stim_seq, length)
+    res = array(NA, dim=c(2, max(stim_lengths), length(up_stim_seq)))
+    for (i in 1:length(up_stim_seq)) {
+      res[, 1:stim_lengths[i], i] = rbind(up_stim_seq[[i]], down_stim_seq[[i]])
+    }
+  } else {
+    res = list()
+    for (i in 1:length(up_stim_seq)) {
+      res[[i]] = rbind(up_stim_seq[[i]], down_stim_seq[[i]])
+    }
   }
   
-  stim_mat_list
+  res
   
 }

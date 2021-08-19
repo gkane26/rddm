@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{sim_ddm}
 \alias{sim_ddm}
-\title{Simulate drift diffusion model with fixed or collapsing boundary}
+\title{Simulate drift diffusion model with fixed or collapsing boundary, with or without urgency}
 \usage{
 sim_ddm(
   n,
@@ -17,11 +17,16 @@ sim_ddm(
   aprime = 0,
   kappa = 0,
   tc = 0.25,
+  uslope = 0,
+  umag = 0,
+  udelay = 0,
   s = 1,
   dt = 0.001,
   max_time = 10,
   bounds = 0L,
-  n_threads = 1L
+  urgency = 0L,
+  n_threads = 1L,
+  return_accu = FALSE
 )
 }
 \arguments{
@@ -49,19 +54,29 @@ sim_ddm(
 
 \item{tc}{numeric; time constant of collapse, default = .25}
 
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
+
 \item{s}{numeric; standard deviation in wiener diffusion noise, default = 1}
 
 \item{dt}{numeric; time step of simulation, default = .001}
 
 \item{max_time}{numeric; max time of simulation, default = 10}
 
-\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
+
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
 
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
+
+\item{return_accu}{bool; if True, return full trajectory of accumulators}
 }
 \value{
 data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 }
 \description{
-Simulate drift diffusion model with fixed or collapsing boundary
+Simulate drift diffusion model with fixed or collapsing boundary, with or without urgency
 }

@@ -11,7 +11,8 @@ pulse_stimulus(
   dur = 0.01,
   isi = 0.1,
   pre_stim = 0,
-  dt = 0.001
+  dt = 0.001,
+  as_array = F
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ pulse_stimulus(
 \item{pre_stim}{numeric; time before pulse within stimulus bin. default = 0}
 
 \item{dt}{numeric; timestep for simulation, default = .001}
+
+\item{as_array}{logical; if True, return as 3d array (2 x timepoints x trials)}
 }
 \value{
 stimulus train

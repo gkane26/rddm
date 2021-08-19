@@ -11,7 +11,7 @@ model$predict(pars=NULL, n=10000, ...)
 
 \item{n}{integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition}
 
-\item{method}{string; "euler" for euler-maruyama simulation or "integral" for integral equation method}
+\item{method}{string; "rtdists" for rtdists package (rdiffusion), "euler" for euler-maruyama simulation, or "integral" for integral equation method}
 
 \item{...}{additional arguments passed to \code{sim_ddm}}
 }

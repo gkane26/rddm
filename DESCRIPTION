@@ -16,12 +16,16 @@ Imports:
     parallel,
     foreach,
     doParallel,
-    stringr
+    stringr,
+    dqrng
 Remotes:
     github::gkane26/modelfitr
+    github::gkane26/RcppZiggurat@interfaces
 LinkingTo:
     Rcpp,
-    RcppArmadillo
+    RcppArmadillo,
+    RcppZiggurat,
+    dqrng
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(r6 = FALSE)

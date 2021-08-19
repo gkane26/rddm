@@ -50,9 +50,8 @@ definition of pulse diffusion model object
 }
 \description{
 R6 Class that defines a pulse diffusion model (Brunton et al., 2012, Science) to be applied to a set of behavioral data.
-
-#' @details 
-
+}
+\details{
 For details regarding other methods, see:
 \itemize{
 \item{pm$set_objective: \code{\link{set_pdm_objective}}}

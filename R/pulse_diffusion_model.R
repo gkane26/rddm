@@ -47,6 +47,7 @@ pulse_fp_obj <- function(pars,
 
 pulse_chisq_obj <- function(...) stop("Not Implemented!")
 
+
 set_pm_parameters = function(pars){
   
   # self$par_values = pars
@@ -88,9 +89,9 @@ set_pm_parameters = function(pars){
 
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
-  checks = sum(private$par_matrix[, (v < 0) | (v > 100)]) # v
-  checks = checks + sum(private$par_matrix[, (a <= 0) | (a > 10)]) # a
+  checks = sum(private$par_matrix[, (a <= 0) | (a > 10)]) # a
   checks = checks + sum(private$par_matrix[, (t0 < 0) | (t0 > 1)]) # t0
+  checks = checks + sum(private$par_matrix[, s <= 0]) # s
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   else
@@ -109,8 +110,6 @@ check_pdm_constraints <- function(){
     checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
   if ("tc" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
-  if ("s" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, s <= 0]) # s
   return(checks == 0)
 }
 
@@ -263,10 +262,10 @@ init_pulse_model = function(dat,
   }
   
   # set default parameter values
-  all_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc", "s")
-  values = c(1, 1, .3, .5, 0, 0, 0, 0, 0, 0.5, 1, .25, 1)
-  lower = c(0, .1, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10, 1e-10)
-  upper = c(100, 10, 1, .8, 100, 100, .2, .2, 100, 1, 5, 2, 5)
+  all_pars = c("a", "t0", "s", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc")
+  values = c(1, .3, 1, .5, 0, 0, 0, 0, 0, 0.5, 1, .25)
+  lower = c(.1, 1e-10, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10)
+  upper = c(10, 1, 5, .8, 100, 100, .2, .2, 100, 1, 5, 2)
   
   check_default_values = c("sv", "sz", "st0")
   for (c in check_default_values) {
@@ -289,7 +288,7 @@ init_pulse_model = function(dat,
     }
   
   # get parameters to be fit and parameters with fixed values
-  default_pars = c("v", "a","t0")
+  default_pars = c("a","t0", "s")
   default_pars = default_pars[!(default_pars %in% names(fixed_pars))]
   include = include[!(include %in% names(fixed_pars))]
   include = c(default_pars, include)
@@ -381,11 +380,11 @@ init_pulse_model = function(dat,
       private$bounds = 0L
     }
   } else {
-    if (!bounds %in% c("fixed", "hyperbolic", "weibull")) {
+    if (!bounds %in% c("fixed", "hyperbolic", "weibull", "linear")) {
       warning("specified bounds not supported, using fixed bounds.")
       private$bounds = 0L
     } else {
-      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull"))) - 1
+      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull", "linear"))) - 1
     }
     
   }
@@ -415,7 +414,7 @@ init_pulse_model = function(dat,
 #' 
 #' R6 Class that defines a pulse diffusion model (Brunton et al., 2012, Science) to be applied to a set of behavioral data.
 #'
-#'#' @details 
+#' @details 
 #' 
 #' For details regarding other methods, see:
 #' \itemize{

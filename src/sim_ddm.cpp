@@ -6,7 +6,7 @@ using namespace Rcpp;
 // [[Rcpp::plugins(openmp)]]
 
 
-//' Simulate drift diffusion model with fixed or collapsing boundary
+//' Simulate drift diffusion model with fixed or collapsing boundary, with or without urgency
 //'
 //' @param n integer; number of decisions to simulate
 //' @param v numeric; drift rate
@@ -20,20 +20,27 @@ using namespace Rcpp;
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
+//' @param uslope numeric; urgency scaling factor, default = 0;
+//' @param umag numeric; urgency magnitude, default = 0;
+//' @param udelay numeric; urgency delay, default = 0;
 //' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 //' @param dt numeric; time step of simulation, default = .001
 //' @param max_time numeric; max time of simulation, default = 10
-//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
+//' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
+//' @param urgency int: 0 for none, 1 for linear, 2 for logistic
 //' @param n_threads integer; number of threads to run in parallel, default = 1
-//' 
+//' @param return_accu bool; if True, return full trajectory of accumulators
+//'
 //' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 //' 
 //' @export
 // [[Rcpp::export]]
 List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
-                  double sv=0, double st0=0, double sz=0,
-                  double aprime=0, double kappa=0, double tc=.25,
-                  double s=1, double dt=.001, double max_time=10, int bounds=0, int n_threads=1){
+             double sv=0, double st0=0, double sz=0,
+             double aprime=0, double kappa=0, double tc=.25,
+             double uslope=0, double umag=0, double udelay=0,
+             double s=1, double dt=.001, double max_time=10,
+             int bounds=0, int urgency=0, int n_threads=1, bool return_accu=false){
   
   omp_set_num_threads(n_threads);
   int n_on_thread = n / n_threads;
@@ -43,19 +50,35 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
   
   arma::vec tvec = arma::regspace(dt, dt, max_time),
     bound;
-  if (bounds == 2){
-    bound = weibull_bound(tvec, a, aprime, kappa, tc);
-  }else if (bounds == 1){
+  if (bounds == 1) {
     bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+  } else if (bounds == 2) {
+    bound = weibull_bound(tvec, a, aprime, kappa, tc);
+  } else if (bounds == 3) {
+    bound = linear_bound(tvec, a, kappa, tc);
   } else {
     bound = rep(a/2, tvec.n_elem);
   }
   
-  arma::mat accumulators_full(n, tvec.n_elem+1);
-  accumulators_full.fill(arma::datum::nan);
+  arma::vec gamma(tvec.n_elem);
+  if (urgency == 1) {
+    gamma = uslope * (tvec - udelay);
+    gamma.clamp(1, arma::datum::inf);
+  } else if (urgency == 2) {
+    arma::vec s1 = arma::exp(uslope * (tvec - udelay));
+    double s2 = exp(-uslope * udelay);
+    gamma = (umag*s1 / (1 + s1)) + (1 + (1-umag)*s2) / (1 + s2);
+  } else {
+    gamma.fill(1);
+  }
+  
+  arma::mat  accumulators_full(n, tvec.n_elem+1);
+  if (return_accu) {
+    accumulators_full.fill(arma::datum::nan);
+  }
   
   double dW = s*sqrt(dt);
-
+  
 #pragma omp parallel for
   for (int i=0; i<n_threads; i++){
     
@@ -67,17 +90,23 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
       x = a/2 * (z_var - 0.5),
       rt = arma::zeros(n_on_thread);
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
+    
     arma::mat accumulators(n_on_thread, tvec.n_elem+1);
-    accumulators.fill(arma::datum::nan);
-    accumulators.col(0) = x;
+    if (return_accu) {
+      accumulators.fill(arma::datum::nan);
+      accumulators.col(0) = x;
+    }
     
     while((still_drift.n_elem > 0) & (t < max_time)){
-      x(still_drift) +=  v_var(still_drift)*dt + dW*arma::randn(still_drift.size());
+      x(still_drift) +=  gamma(step) * (v_var(still_drift)*dt + dW*arma::randn(still_drift.size()));
       rt(still_drift) += dt;
       still_drift = arma::find(arma::abs(x) < bound(step));
       t+=dt;
       step++;
-      accumulators.col(step) = x;
+      
+      if (return_accu) {
+        accumulators.col(step) = x;
+      }
     }
     
     double final_bound = bound(bound.n_elem-1);
@@ -87,12 +116,19 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
     
     rt_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = rt;
     response_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = response;
-    accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
     
+    if (return_accu) {
+      accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
+    }
   }
   
   DataFrame sim = DataFrame::create(Named("response")=response_full, Named("rt")=rt_full+t0+st0*(arma::randu(n)-.5));
-  return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
+  if (return_accu) {
+    return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
+  } else {
+    return List::create(Named("behavior") = sim);
+  }
+  
 }
 
 //' Simulate drift diffusion model with fixed or collapsing boundary
@@ -175,16 +211,18 @@ DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z=0, arm
   
   arma::vec tvec = arma::regspace(dt, dt, max_time);
   arma::mat bound(tvec.n_elem, a.n_elem);
-  if(bounds == 2){
-    bound = weibull_bound_vec(tvec, a, aprime, kappa, tc);
-  }else if(bounds == 1){
+  if(bounds == 1){
     bound = hyperbolic_ratio_bound_vec(tvec, a, kappa, tc);
-  } else {
+  }else if(bounds == 2){
+    bound = weibull_bound_vec(tvec, a, aprime, kappa, tc);
+  } else if(bounds == 3) {
+    bound = linear_bound_vec(tvec, a, kappa, tc);
+  }else {
     bound.each_col() = arma::zeros(tvec.n_elem) + a/2;
   }
   
   double dW = s*sqrt(dt);
-
+  
 #pragma omp parallel for
   for (int i=0; i<n_threads; i++) {
     

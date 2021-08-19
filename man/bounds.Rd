@@ -2,12 +2,18 @@
 % Please edit documentation in R/RcppExports.R
 \name{bounds}
 \alias{bounds}
+\alias{linear_bound}
+\alias{linear_bound_vec}
 \alias{hyperbolic_ratio_bound}
 \alias{hyperbolic_ratio_bound_vec}
 \alias{weibull_bound}
 \alias{weibull_bound_vec}
 \title{Collapsing boundary functions}
 \usage{
+linear_bound(t, a, kappa = 0, tc = 0)
+
+linear_bound_vec(t, a, kappa = 0L, tc = 0L, check_pars = TRUE)
+
 hyperbolic_ratio_bound(t, a, kappa = 0, tc = 0.25)
 
 hyperbolic_ratio_bound_vec(t, a, kappa = 0L, tc = 0L, check_pars = TRUE)

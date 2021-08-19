@@ -8,24 +8,27 @@ pulse_nll(
   choices,
   rt,
   stimuli,
-  v,
   a,
   t0,
+  s,
   z = 0L,
   dc = 0L,
   sv = 0L,
   st0 = 0L,
   sz = 0L,
-  s = 0L,
   lambda = 0L,
   aprime = 0L,
   kappa = 0L,
   tc = 0L,
+  uslope = 0L,
+  umag = 0L,
+  udelay = 0L,
   check_pars = TRUE,
   v_scale = 1,
   dt = 0.001,
   dx = 0.05,
   bounds = 0L,
+  urgency = 0L,
   n_threads = 1L
 )
 }
@@ -34,11 +37,11 @@ pulse_nll(
 
 \item{stimuli}{list; list of stimulus matrices}
 
-\item{v}{numeric; drift rate, either single value or vector for each trial}
-
 \item{a}{numeric; initial boundary, either single value or vector for each trial}
 
 \item{t0}{numeric; non-decision time, either single value or vector for each trial}
+
+\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial}
 
 \item{z}{numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5}
 
@@ -50,8 +53,6 @@ pulse_nll(
 
 \item{sz}{numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
 
-\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1}
-
 \item{lambda}{numeric; O-U process slope, either single value or vector for each trial}
 
 \item{aprime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
@@ -59,6 +60,12 @@ pulse_nll(
 \item{kappa}{numeric; slope of collapse, either single value or vector for each trial, default = 0}
 
 \item{tc}{numeric; time constant of collapse, either single value or vector for each trial, default = .25}
+
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
 
 \item{check_pars}{logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true}
 
@@ -68,7 +75,9 @@ pulse_nll(
 
 \item{dx}{numeric; size of evidence bins, default = .05}
 
-\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
+
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
 
 \item{n_threads}{int; number of threads (trials) to run in parallel}
 
