@@ -124,7 +124,7 @@ zrandn <- function(n) {
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 100L, bounds = 0L, urgency = 0L) {
+pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
     .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
 }
 
@@ -157,7 +157,7 @@ pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, s
 #' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 100L, bounds = 0L, urgency = 0L) {
+pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
     .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
 }
 
@@ -194,7 +194,7 @@ pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv 
 #' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, stimuli, a, t0, s, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 100L, bounds = 0L, urgency = 0L, n_threads = 1L) {
+pulse_nll <- function(choices, rt, stimuli, a, t0, s, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L, n_threads = 1L) {
     .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, check_pars, v_scale, dt, xbins, bounds, urgency, n_threads)
 }
 

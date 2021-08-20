@@ -112,7 +112,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
     // get transition matrix
     double sigma2 = gamma(t)*gamma(t)*s*s*dt + gamma(t)*sv*abs(stimulus(0, t)*(v_scale+dc))*dt*dt + gamma(t)*sv*abs(stimulus(1, t)*(-v_scale+dc))*dt*dt;
     for(unsigned int j=1; j<t_mat.n_rows-1; j++){
-      double mu = exp(lambda*dt)*bin_centers(j-1) + gamma(t)*(((v_scale+dc)*stimulus(0, t) + (-v_scale+dc)*stimulus(1, t)) * dt);
+      double mu = exp(-lambda*dt)*bin_centers(j-1) + gamma(t)*(((v_scale+dc)*stimulus(0, t) + (-v_scale+dc)*stimulus(1, t)) * dt);
       p_breaks = arma::normcdf(bin_breaks, mu, sqrt(sigma2));
       t_mat(0, j) = p_breaks(0);
       t_mat(arma::span(1, t_mat.n_rows-2), j) = arma::diff(p_breaks);

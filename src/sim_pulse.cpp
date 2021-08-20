@@ -130,7 +130,7 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
       x(still_drift) += (gamma(step) * dW * zrandn(still_drift.n_elem)) +
         (gamma(step) * ((v_var(still_drift) + dc) % stim0 * dt)) +
         (gamma(step) * ((-v_var(still_drift) + dc) % stim1 * dt)) +
-        (lambda * x(still_drift) * dt);
+        (-lambda * x(still_drift) * dt);
 
       rt(still_drift) += dt;
       still_drift = arma::find(abs(x) < bound(step));

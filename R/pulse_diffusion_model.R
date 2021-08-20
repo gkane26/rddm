@@ -89,6 +89,7 @@ set_pm_parameters = function(pars){
 
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
+  
   checks = sum(private$par_matrix[, (a <= 0) | (a > 10)]) # a
   checks = checks + sum(private$par_matrix[, (t0 < 0) | (t0 > 1)]) # t0
   checks = checks + sum(private$par_matrix[, s <= 0]) # s
@@ -103,13 +104,20 @@ check_pdm_constraints <- function(){
   if ("st0" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("lambda" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (lambda < -100) | (lambda > 100)]) # lambda
+    checks = checks + sum(private$par_matrix[, (lambda < 0) | (lambda > 100)]) # lambda
   if ("aprime" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
   if ("tc" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, tc <= 0]) # tc
+  if ("uslope" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, uslope <= 0]) # uslope
+  if ("udelay" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, udelay <= 0]) # udelay
+  if ("umag" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, umag <= 0]) # umag
+  
   return(checks == 0)
 }
 
@@ -262,12 +270,28 @@ init_pulse_model = function(dat,
   }
   
   # set default parameter values
-  all_pars = c("a", "t0", "s", "z", "dc", "sv", "sz", "st0", "lambda", "aprime", "kappa", "tc")
-  values = c(1, .3, 1, .5, 0, 0, 0, 0, 0, 0.5, 1, .25)
-  lower = c(.1, 1e-10, 1e-10, .2, -100, 0, 0, 0, -100, 0, 0, 1e-10)
-  upper = c(10, 1, 5, .8, 100, 100, .2, .2, 100, 1, 5, 2)
+  all_pars = c("a", "t0", "s",
+               "z", "dc",
+               "sv", "sz", "st0",
+               "lambda", "aprime", "kappa", "tc",
+               "uslope", "udelay", "umag")
+  values = c(1, .3, 1,
+             .5, 0,
+             0, 0, 0,
+             0, 0.5, 1, .25,
+             0, 0, 0)
+  lower = c(.1, 1e-10, 1e-10,
+            .2, -100,
+            0, 0, 0,
+            0, 0, 0, 1e-10,
+            0, 0, 0)
+  upper = c(10, 1, 5,
+            .8, 100,
+            10, .5, .5,
+            100, 1, 5, 2,
+            10, 10, 10)
   
-  check_default_values = c("sv", "sz", "st0")
+  check_default_values = c("sv", "sz", "st0", "lambda", "uslope", "umag", "udelay")
   for (c in check_default_values) {
     if ((c %in% include) | (c %in% names(depends_on)) | (c %in% names(as_function))) values[all_pars == c] = 0.1
   }

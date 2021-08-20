@@ -25,7 +25,7 @@ pulse_trial_lik(
   udelay = 0,
   v_scale = 1,
   dt = 0.001,
-  xbins = 100L,
+  xbins = 200L,
   bounds = 0L,
   urgency = 0L
 )
