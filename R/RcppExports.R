@@ -375,6 +375,72 @@ sim_pulse <- function(n, stimuli, a, t0, s, z = .5, dc = 0, sv = 0, st0 = 0, sz 
     .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimuli, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu)
 }
 
+#' Simulate pulse diffusion model with fixed or collapsing boundary
+#'
+#' @param n integer; number of decisions to simulate
+#' @param stimuli mat; stimuli to simulate, 2 rows X timepoints
+#' @param a numeric; initial boundary
+#' @param t0 numeric; non-decision time
+#' @param s numeric; standard deviation in wiener diffusion noise
+#' @param z numeric; starting point, 0 < z < 1, default = .5
+#' @param dc numeric; drift criterion, upper drift = v, lower drift = v-d
+#' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
+#' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
+#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param lambda numeric; O-U process slope
+#' @param aprime numeric; degree of collapse, default = 0
+#' @param kappa numeric; slope of collapse, default = 1
+#' @param tc numeric; time constant of collapse, default = .25
+#' @param uslope numeric; urgency scaling factor, default = 0;
+#' @param umag numeric; urgency magnitude, default = 0;
+#' @param udelay numeric; urgency delay, default = 0;
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
+#' @param dt numeric; time step of simulation, default = .001
+#' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
+#' @param urgency int: 0 for none, 1 for linear, 2 for logistic
+#' @param n_threads integer; number of threads to run in parallel, default = 1
+#' @param return_accu bool; if True, return full trajectory of accumulators
+#'
+#' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
+#' 
+#' @export
+sim_pulse_trial <- function(n, stimulus, a, t0, s, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE) {
+    .Call('_rddm_sim_pulse_trial', PACKAGE = 'rddm', n, stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu)
+}
+
+#' Simulate pulse diffusion model with fixed or collapsing boundary
+#'
+#' @param n integer; number of decisions to simulate
+#' @param stimuli mat; stimuli to simulate, 2 rows X timepoints
+#' @param a numeric; initial boundary
+#' @param t0 numeric; non-decision time
+#' @param s numeric; standard deviation in wiener diffusion noise
+#' @param z numeric; starting point, 0 < z < 1, default = .5
+#' @param dc numeric; drift criterion, upper drift = v, lower drift = v-d
+#' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
+#' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
+#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param lambda numeric; O-U process slope
+#' @param aprime numeric; degree of collapse, default = 0
+#' @param kappa numeric; slope of collapse, default = 1
+#' @param tc numeric; time constant of collapse, default = .25
+#' @param uslope numeric; urgency scaling factor, default = 0;
+#' @param umag numeric; urgency magnitude, default = 0;
+#' @param udelay numeric; urgency delay, default = 0;
+#' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
+#' @param dt numeric; time step of simulation, default = .001
+#' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
+#' @param urgency int: 0 for none, 1 for linear, 2 for logistic
+#' @param n_threads integer; number of threads to run in parallel, default = 1
+#' @param return_accu bool; if True, return full trajectory of accumulators
+#'
+#' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
+#' 
+#' @export
+sim_pulse_trial1 <- function(n, stimulus, a, t0, s, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE) {
+    .Call('_rddm_sim_pulse_trial1', PACKAGE = 'rddm', n, stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu)
+}
+
 #' Urgency functions
 #' 
 #' @description evaluate diffusion model urgency signals (linear and logistic)

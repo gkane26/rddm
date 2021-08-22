@@ -179,7 +179,12 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
     trial_code = 1:length(stim_list)
   }
   
-  if(is.null(pars)) pars = self$solution$pars
+  if(is.null(pars)) {
+    if (is.null(self$solution)) {
+      stop("if parameters have not been fit (i.e. no model solution), must supply pars!")
+    }
+    pars = self$solution$pars
+  }
   private$set_params(pars)
   
   if (method == "euler") {
