@@ -4,13 +4,15 @@
 \alias{pulse_model}
 \title{Pulse diffusion model R6 Class}
 \usage{
-pdm <- pulse_model$new(dat, stim_var, stim_sep="", stim_dur=.01, stim_interval=.1, model_name="pdm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds=0L, objective="fp")
+pm <- pulse_model$new(dat, stim_var, stim_sep="", stim_dur=.01, stim_interval=.1, model_name="pdm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds=0L, objective="fp")
 
-pdm$set_objective(objective="fp")
+pm$set_objective(objective="fp")
 
-pdm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
+pm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 
-dm$predict(pars=NULL, n=10000, ...)
+pm$predict(pars=NULL, n=10000, ...)
+
+pm$simulate(n, stimuli, par_values, par_names=NULL, ...)
 }
 \arguments{
 \item{dat}{data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)}
@@ -57,5 +59,6 @@ For details regarding other methods, see:
 \item{pm$set_objective: \code{\link{set_pdm_objective}}}
 \item{pm$fit: \code{\link{fit_diffusion_model}}}
 \item{pm$predict: \code{\link{predict_pulse_model}}}
+\item{pm$simulate: \code{\link{simulate_pulse_model}}}
 }
 }

@@ -6,8 +6,8 @@ from Voskuilen, Ratcliff & Smith (2016). J Math Psychol
 
 */
 
-#include "RcppArmadillo.h"
-#include "omp.h"
+#include <RcppArmadillo.h>
+#include <omp.h>
 #include "bounds.h"
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]

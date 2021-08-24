@@ -25,7 +25,7 @@ evacc_chisq_obj <- function(pars,
   
   #check params
   if(transform_pars) {
-    pars = private$logistic_untransform(pars)
+    pars = private$logistic(pars)
   }
   
   if(debug){

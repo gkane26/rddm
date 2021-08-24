@@ -21,7 +21,7 @@ get_rt_quantiles(
 \item{conditions}{character vector; vector of columns indicating the conditions in which to calcluate rt quantiles}
 }
 \value{
-list with data.table withresponse time quantiles and vector of rt quantiles
+list with data.table with response time quantiles and vector of rt quantiles
 }
 \description{
 Get response time quantiles

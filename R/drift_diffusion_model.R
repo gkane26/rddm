@@ -1,83 +1,6 @@
 #####################################
 # Helper functions for diffusion model object
 
-get_first_passage_density = function(pars_list, dt=.01, ...){
-  density = do.call(ddm_integral_fpt, c(pars_list, dt=dt, ...))
-  rownames(density) = seq(dt, dt*nrow(density), dt)
-  density
-}
-
-
-get_rt_liks = function(dat, density_list, min_p=1e-10){
-  
-  min_p = as.numeric(min_p)
-  
-  #get time bin for each response
-  tvec = as.numeric(rownames(density_list[[1]]$density))
-  dt = tvec[2] - tvec[1]
-  dat[, rt_bin := rt / dt]
-  
-  condition_idx = 2:length(density_list[[1]])
-  p_response = numeric()
-  new_dat = data.table()
-  for(i in 1:length(density_list)){
-    
-    #subset only this condition
-    sub_dat=dat
-    for(j in 2:length(density_list[[i]])){
-      sub_dat=sub_dat[get(names(density_list[[i]])[j])==density_list[[i]][j]]
-    }
-    
-    sub_dat[response == 0, p_rt := density_list[[i]]$density[rt_bin, 2]]
-    sub_dat[response == 1, p_rt := density_list[[i]]$density[rt_bin, 1]]
-    new_dat = rbind(new_dat, sub_dat)
-  }
-  
-  new_dat[p_rt < min_p, p_rt := min_p]
-  return(new_dat)
-}
-
-
-set_dm_parameters = function(pars){
-  self$par_values = pars
-  private$par_matrix = copy(private$par_transform)
-  
-  for(i in (1+length(private$sim_cond)):(length(private$par_transform))){
-    
-    this_par = names(private$par_matrix)[[i]]
-    
-    if (this_par %in% names(private$as_function)) {
-      
-      fun_par_index = which(self$par_corresponding == this_par)
-      fun_pars = stringr::str_split_fixed(self$par_names[fun_par_index], pattern="_", n=2)[,2]
-      fun_pars_list = list()
-      for (fp in 1:length(fun_pars)) fun_pars_list[[fun_pars[fp]]] = self$par_values[fp]
-      use_cols = which(names(private$par_matrix) %in% formalArgs(private$as_function[[this_par]]))
-      private$par_matrix[[this_par]] = do.call(private$as_function[[this_par]], c(as.list(private$par_matrix[, ..use_cols]), fun_pars_list))
-      
-    } else {
-      
-      private$par_matrix[[this_par]] = self$par_values[private$par_matrix[[this_par]]]
-      # private$par_matrix[[names(private$par_matrix)[[i]]]] = self$par_values[private$par_matrix[[names(private$par_matrix)[i]]]]
-      
-    }
-    
-  }
-  
-  if("v" %in% names(private$par_matrix) & !("v" %in% names(private$as_function)))
-    private$par_matrix[correctSide==0, v := -v]
-  
-}
-
-
-get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions = c("correctSide")){
-  p_q = diff(c(0,qs,1))
-  rt_qs = dat[, c("n_response" = .N, "p_response" = numeric(1), as.list(quantile(get(rt_var), qs))), c("response", conditions)]
-  rt_qs[, p_response := n_response/sum(n_response), conditions]
-  list(rt_qs, p_q)
-}
-
-
 check_ddm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
   checks = sum(private$par_matrix[, a <= 0]) # a
@@ -144,163 +67,48 @@ set_ddm_objective <- function(objective=NULL) {
 }
 
 
-init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...){
-  
-  super$initialize(dat, model_name)
-  
-  # get variables used for as_function parameters
-  as_function_vars = NULL
-  if (!is.null(as_function)) {
-    for (i in 1:length(as_function)) {
-      
-      if (class(as_function[[i]]) == "list") {
-        all_args = formals(as_function[[i]][[1]])
-      } else  if (class(as_function[[i]]) == "function"){
-        all_args = formals(as_function[[i]])
-      } else {
-        stop("as_function arguments must be a function or a list with two elements: [1] a function and [2] vector or parameter names")
-      }
-      
-      no_default = sapply(all_args, function(x) x == "")
-      no_default[names(no_default) == "..."] = FALSE
-      as_function_vars = c(as_function_vars, names(all_args)[no_default])
-      
-    }
-  }
-  
-  # get task conditions and rt quantiles
-  sort_var = c(depends_on, extra_condition, as_function_vars, "correctSide", "response")
-  setorderv(self$data, sort_var)
-  simulate_conditions = c("correctSide", unique(c(depends_on, extra_condition, as_function_vars)))
-  self$data = self$data[rt<max_time]
-  q_list = get_rt_quantiles(self$data, conditions = simulate_conditions, ...)
-  self$data_q = q_list[[1]]
-  private$p_q = q_list[[2]]
-  private$as_function = lapply(as_function, function(x) ifelse(class(x) == "function", x, x[[1]]))
-  par_transform = self$data[, get(simulate_conditions), simulate_conditions]
-  par_transform[, V1:=NULL]
-  
+init_diffusion_model = function(dat,
+                                model_name="ddm",
+                                include=NULL,
+                                depends_on=NULL,
+                                as_function=NULL,
+                                start_values=NULL,
+                                fixed_pars=NULL,
+                                extra_condition=NULL,
+                                bounds=NULL,
+                                urgency=NULL,
+                                objective=NULL,
+                                max_time=10,
+                                ...){
   
   # set default parameter values
-  all_pars = c("v", "a", "t0", "z", "dc", "sv", "st0", "sz", "aprime", "kappa", "tc")
-  values = c(1, 1.5, .3, .5, 0, 0, 0, 0, 0.25, 1, 0.25)
-  lower = c(-10, 0, 0, .2, -10, 0, 0, 0, 0, 0, 0)
-  upper = c(10, 10, 1, .8, 10, 1, .25, .2, 1, 10, 2)
+  all_pars = c("v", "a", "t0", "z", "dc", "sv", "st0", "sz", "aprime", "kappa", "tc", "uslope", "udelay", "umag")
+  values = c(1, 1.5, .3, .5, 0, 0, 0, 0, 0.25, 1, 0.25, 0, 0, 0)
+  lower = c(-10, 0, 0, .2, -10, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  upper = c(10, 10, 1, .8, 10, 1, .25, .2, 1, 10, 2, 10, 10, 10)
+  default_pars = c("v", "a", "t0")
+  start_if_include = c(sv=0.1, sz=0.1, st0=0.1, uslope=1, udelay=1, umag=1)
   
-  # check all supplied parameters, remove if not in all_pars
-  rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
-  fixed_pars = fixed_pars[names(fixed_pars) %in% all_pars]
-  rm_include = include[!(include %in% all_pars)]
-  include = include[include %in% all_pars]
-  rm = c(rm_fixed, rm_include)
-  if(length(rm) >= 1)
-    warning("requested variables are not supported :: ", rm, sep=c("", rep(", ", length(rm)-1)))
+  super$initialize(dat,
+                   model_name,
+                   par_names=all_pars,
+                   par_values=values,
+                   par_lower=lower,
+                   par_upper=upper,
+                   default_pars=default_pars,
+                   start_if_include=start_if_include,
+                   include=include,
+                   depends_on=depends_on,
+                   as_function=as_function,
+                   start_values=start_values,
+                   fixed_pars=fixed_pars,
+                   max_time=max_time,
+                   extra_condition=extra_condition,
+                   bounds=bounds,
+                   urgency=urgency,
+                   ...)
   
-  # overwrite defaults with supplied starting values
-  if(length(start_values) > 0)
-    for(i in 1:length(start_values)){
-      values[all_pars==names(start_values)[i]] = start_values[i]
-    }
-  
-  # get parameters to be fit and parameters with fixed values
-  default_pars = c("v", "a","t0")
-  default_pars = default_pars[!(default_pars %in% names(fixed_pars))]
-  include = include[!(include %in% names(fixed_pars))]
-  include = c(default_pars, include)
-  
-  if(length(depends_on) > 0)
-    self$data = self$data[order(get(depends_on))]
-  par_names = character()
-  par_corresponding = character()
-  par_values = numeric()
-  par_lower = numeric()
-  par_upper = numeric()
-  par_transform = cbind(par_transform, matrix(0,nrow=par_transform[,.N],ncol=length(include), dimnames=list(NULL,include)))
-  for(i in 1:length(all_pars)){
-    if(all_pars[i] %in% include){
-      if(all_pars[i] %in% names(depends_on)){
-        conds = self$data[, unique(get(depends_on[all_pars[i]]))]
-        for(j in conds){
-          par_names = c(par_names, paste(all_pars[i], j, sep="_"))
-          par_corresponding = c(par_corresponding, all_pars[i])
-          par_values = c(par_values, values[i])
-          par_lower = c(par_lower, lower[i])
-          par_upper = c(par_upper, upper[i])
-          par_transform[get(depends_on[all_pars[i]]) == j, (all_pars[i]) := length(par_values)]
-        }
-      }else if(all_pars[i] %in% names(as_function)){
-        if(class(as_function[[all_pars[i]]]) == "function") {
-          fun_args = formals(as_function[[all_pars[i]]])
-          has_default = sapply(all_args, function(x) x != "")
-          fun_args = fun_args[has_default]
-          fun_names = names(fun_args)
-          fun_vals = unname(unlist(fun_args))
-          fun_lower = rep(-Inf, length(fun_vals))
-          fun_upper = rep(Inf, length(fun_vals))
-        } else {
-          fun_args = formals(as_function[[all_pars[i]]][[1]])
-          has_default = sapply(all_args, function(x) x != "")
-          fun_args = fun_args[has_default]
-          fun_names = names(fun_args)
-          fun_vals = unname(unlist(fun_args))
-          fun_lower = as_function[[all_pars[i]]][[2]][1,]
-          fun_upper = as_function[[all_pars[i]]][[2]][2,]
-        }
-        
-        par_names = c(par_names, paste(all_pars[i], fun_names, sep="_"))
-        par_corresponding = c(par_corresponding, rep(all_pars[i], length(par_names)))
-        par_values = c(par_values, fun_vals)
-        par_lower = c(par_lower, fun_lower)
-        par_upper = c(par_upper, fun_upper)
-        par_transform[, all_pars[i] := NA]
-        
-      }else{
-        par_names = c(par_names, all_pars[i])
-        par_corresponding = c(par_corresponding, all_pars[i])
-        par_values = c(par_values, values[i])
-        par_lower = c(par_lower, lower[i])
-        par_upper = c(par_upper, upper[i])
-        par_transform[, (all_pars[i]) := length(par_values)]
-      }
-      
-    }else{
-      if(!(all_pars[i] %in% names(fixed_pars))){
-        message(paste("parameter ::", all_pars[i], "is not specified, including as fixed parameter with value =", values[i]))
-        fixed_pars = c(fixed_pars, values[i])
-        names(fixed_pars)[length(fixed_pars)] = all_pars[i]
-      }
-    }
-  }
-  
-  self$par_names=par_names
-  self$par_corresponding=par_corresponding
-  self$start_values=par_values
   self$set_objective(objective)
-  
-  private$max_time=max_time
-  private$lower=par_lower
-  private$upper=par_upper
-  private$fixed=fixed_pars
-  private$par_transform=par_transform
-  private$sim_cond=simulate_conditions
-  
-  if (is.null(bounds)) {
-    if("aprime" %in% par_corresponding) {
-      private$bounds = 2L
-    } else if (any(c("kappa", "tc") %in% par_corresponding)) {
-      private$bounds = 1L
-    } else {
-      private$bounds = 0L
-    }
-  } else {
-    if (!bounds %in% c("fixed", "hyperbolic", "weibull")) {
-      warning("specified bounds not supported, using fixed bounds.")
-      private$bounds = 0L
-    } else {
-      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull"))) - 1
-    }
-    
-  }
   
 }
 
@@ -322,9 +130,9 @@ init_diffusion_model = function(dat, model_name="ddm", include=NULL, depends_on=
 #' 
 #' @keywords internal
 #' 
-predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
+predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
   
-  if(is.null(pars)) pars = self$solution$pars
+  if(is.null(pars)) pars = self$par_values
   private$set_params(pars)
   
   pars_only_mat = copy(private$par_matrix)
@@ -340,6 +148,8 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
   if (pars_only_mat[, .N] < self$data[, .N]) {
     
     for(i in 1:pars_only_mat[, .N]) {
+      
+      if (is.null(n)) n = 10000
       
       if (method == "rtdists") {
         this_sim = setDT(do.call(rtdists::rdiffusion, c(list(n=n),
@@ -377,7 +187,7 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
     
   } else {
     
-    if (n == 10000) n = 1
+    if (is.null(n)) n = 1
     
     all_sim = data.table()
     
@@ -403,6 +213,46 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
   
 }
 
+#' simulate diffusion model  (for internal use)
+#' 
+#' simulate DDM with given diffusion model parameters..
+#' This function is only intended for use with a diffusion model object,
+#' and should not be called directly outside of the diffusion model class.
+#' Please use \code{sim_ddm} as a standalone function.
+#' 
+#' @usage model$simulate(n, par_values, par_names=NULL, ...)
+#'
+#' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
+#' @param par_values numeric vector; vector of parameters. Must be named vector or used with par_names
+#' @param par_names character vector; vector of parameter names
+#' @param ... additional arguments passed to \code{sim_ddm}
+#'
+#' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
+#' 
+#' @keywords internal
+#' 
+simulate_diffusion_model = function(n, par_values, par_names=NULL, ...) {
+
+  if (missing(par_values)) {
+    stop("No parameters! Must supply parameter vector \"par_values\" as a named vector, 
+         or along with a separate vector \"par_names\" with names of paramters.")
+  }
+  
+  if (is.null(names(par_values))) {
+    if (is.null(par_names)) {
+      stop("No parameter names supplied. \"par_values\" must be a named vector, 
+           or the parameter \"par_names\" must be supplied.")
+    } else {
+      if (length(par_names) != length(par_values)) {
+        stop("\"par_names\" must be the same length as \"par_values\".")
+      }
+      names(par_values) = par_names
+    }
+  }
+  
+  do.call(sim_ddm, c(n=n, as.list(par_values), ...))
+  
+}
 
 #' Drift Diffusion Model R6 Class
 #' 
@@ -423,12 +273,14 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
 #' \item{dm$set_objective: \code{\link{set_ddm_objective}}}
 #' \item{dm$fit: \code{\link{fit_diffusion_model}}}
 #' \item{dm$predict: \code{\link{predict_diffusion_model}}}
+#' \item{dm$simulate: \code{\link{simulate_diffusion_model}}}
 #' }
 #' 
 #' @usage dm <- diffusion_model$new(dat, model_name="ddm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, max_time=10, extra_condition=NULL, bounds=NULL, objective=NULL, ...)
 #' @usage dm$set_objective(objective=NULL)
 #' @usage dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 #' @usage dm$predict(pars=NULL, n=10000, ...)
+#' @usage dm$simulate(n, par_values)
 #' 
 #' @param dat data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)
 #' @param model_name string; name to identify model, default = "ddm"
@@ -460,16 +312,11 @@ predict_diffusion_model = function(pars=NULL, n=10000, method="rtdists", ...){
 diffusion_model = R6::R6Class("diffusion_model",
                               inherit=base_diffusion_model,
                               public=list(
-                                data_q=NULL,
                                 initialize=init_diffusion_model,
                                 set_objective=set_ddm_objective,
-                                predict=predict_diffusion_model
+                                predict=predict_diffusion_model,
+                                simulate=simulate_diffusion_model
                               ), private=list(
-                                p_q=NULL,
-                                max_time=NULL,
-                                as_function=NULL,
-                                bounds=NULL,
-                                set_params=set_dm_parameters,
                                 check_par_constraints=check_ddm_constraints,
                                 rtdists_obj = ddm_rtdists_nll,
                                 integral_obj = ddm_integral_nll,

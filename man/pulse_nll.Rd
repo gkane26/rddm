@@ -35,7 +35,7 @@ pulse_nll(
 \arguments{
 \item{rt}{numeric; vector of response times}
 
-\item{stimuli}{list; list of stimulus matrices}
+\item{stimuli}{array; 2 x timepoints x trials array of pulse stimuli}
 
 \item{a}{numeric; initial boundary, either single value or vector for each trial}
 

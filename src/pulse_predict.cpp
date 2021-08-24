@@ -1,8 +1,8 @@
-#include "RcppArmadillo.h"
+#include <RcppArmadillo.h>
+#include <omp.h>
 #include "bounds.h"
 #include "sim_pulse.h"
 #include "pulse_nll.h"
-#include "omp.h"
 using namespace Rcpp;
 //[[Rcpp::depends(RcppArmadillo)]]
 //[[Rcpp::plugins(openmp)]]

@@ -1,9 +1,9 @@
-#include "RcppArmadillo.h"
+#include <RcppArmadillo.h>
+#include <RcppArmadilloExtensions/sample.h>
+#include <unistd.h>
+#include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
-#include "omp.h"
-#include "RcppArmadilloExtensions/sample.h"
-#include "unistd.h"
 using namespace Rcpp;
 //[[Rcpp::depends(RcppArmadillo)]]
 //[[Rcpp::plugins(openmp)]]
@@ -204,7 +204,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //'
 //' @param choice integer; vector of decisions, 0 for lower boundary, 1 for upper
 //' @param rt numeric; vector of response times
-//' @param stimuli list; list of stimulus matrices
+//' @param stimuli array; 2 x timepoints x trials array of pulse stimuli
 //' @param up_sequence vector of strings; string of 0s, and 1s of stimulus values (0 no evidence, 1 to upper). If down_sequence not specified, (0 to lower, 1 to upper).
 //' @param down_sequence vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)
 //' @param a numeric; initial boundary, either single value or vector for each trial
@@ -234,7 +234,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //'
 //' @export
 // [[Rcpp::export]]
-double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
+double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
                  arma::vec a, arma::vec t0, arma::vec s,
                  arma::vec z=0, arma::vec dc=0,
                  arma::vec sv=0, arma::vec st0=0, arma::vec sz=0,
@@ -280,15 +280,13 @@ double pulse_nll(arma::vec choices, arma::vec rt, List stimuli,
       udelay = arma::zeros(choices.n_elem)+udelay(0);
   }
   
-  arma::field<arma::mat> stimuli_field = as<arma::field<arma::mat>>(stimuli);
-  
   double p_rt=0;
   
   // omp parallel over decisions
 #pragma omp parallel for num_threads(n_threads)
   for(unsigned int i=0; i<choices.n_elem; i++){
     
-    double p_local = pulse_trial_lik(choices(i), rt(i), stimuli_field(i),
+    double p_local = pulse_trial_lik(choices(i), rt(i), stimuli.slice(i),
                                      a(i), t0(i), s(i),
                                      z(i), dc(i),
                                      sv(i), st0(i), sz(i),

@@ -11,6 +11,8 @@ dm$set_objective(objective=NULL)
 dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 
 dm$predict(pars=NULL, n=10000, ...)
+
+dm$simulate(n, par_values)
 }
 \arguments{
 \item{dat}{data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)}
@@ -55,6 +57,7 @@ For details regarding other methods, see:
 \item{dm$set_objective: \code{\link{set_ddm_objective}}}
 \item{dm$fit: \code{\link{fit_diffusion_model}}}
 \item{dm$predict: \code{\link{predict_diffusion_model}}}
+\item{dm$simulate: \code{\link{simulate_diffusion_model}}}
 }
 }
 \section{Fields}{

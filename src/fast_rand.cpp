@@ -1,6 +1,6 @@
-#include "RcppArmadillo.h"
-#include "RcppZiggurat.h"
-#include "Ziggurat.h"
+#include <RcppArmadillo.h>
+#include <RcppZiggurat.h>
+#include <Ziggurat.h>
 // [[Rcpp::depends(RcppArmadillo, RcppZiggurat)]]
 
 using namespace Rcpp;
@@ -14,6 +14,9 @@ static Ziggurat::Ziggurat::Ziggurat zigg;
 //'
 //' @return random numbers
 //'
+//' @name zrand
+//' @rdname zrand
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec zrandn(int n) {
@@ -23,3 +26,13 @@ arma::vec zrandn(int n) {
   }
   return x;
 }
+
+//' @rdname zrand
+//' @export
+// [[Rcpp::export]]
+void zrandseed(unsigned long int s) {
+  zigg.setSeed(s);
+  return;
+}
+
+

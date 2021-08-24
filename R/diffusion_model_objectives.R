@@ -6,7 +6,7 @@ ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_
   
   #check params
   if(transform_pars){
-    pars = private$logistic_untransform(pars)
+    pars = private$logistic(pars)
   }
   
   private$set_params(pars)
@@ -56,7 +56,7 @@ ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug
   
   #check params
   if(transform_pars){
-    pars = private$logistic_untransform(pars)
+    pars = private$logistic(pars)
   }
   
   private$set_params(pars)
@@ -68,7 +68,7 @@ ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
   
   if (!foreach::getDoParRegistered()) foreach::registerDoSEQ()
-
+  
   fixed = private$fixed
   max_time = private$max_time
   bounds=private$bounds
@@ -101,7 +101,7 @@ ddm_sim_x2 = function(pars, dat=NULL, n_sim=10000, transform_pars=F, debug_lik=F
   
   #check params
   if(transform_pars){
-    pars = private$logistic_untransform(pars)
+    pars = private$logistic(pars)
   }
   
   private$set_params(pars)

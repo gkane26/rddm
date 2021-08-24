@@ -1,5 +1,5 @@
-#include "RcppArmadillo.h"
-#include "omp.h"
+#include <RcppArmadillo.h>
+#include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
 using namespace Rcpp;

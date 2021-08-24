@@ -8,34 +8,52 @@ pulse_fp_obj <- function(pars,
                          debug=F,
                          ...){
   
-  if(is.null(dat)) dat = self$data
+  ### check constraints
   
-  #check params
-  if(transform_pars)
-    pars = private$logistic_untransform(pars)
+  checks = private$objective_checks(pars,
+                                    transform_pars,
+                                    check_constraints,
+                                    debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
   
-  if(debug){
-    cat("pars = ")
-    cat(round(pars, 3), sep=", ")
-    cat(" // ")
+  if (!is.na(pass) & !pass) {
+    nll = 1e10
+    if(debug) cat("nll =", nll, "\n")
+    return(nll)
   }
   
-  private$set_params(pars)
-  if(check_constraints){
-    if(!private$check_par_constraints()){
-      nll = 1e10
-      if(debug) cat("nll =", nll, "\n")
-      return(nll)
+  if(is.null(dat)) {
+    dat = self$data
+  }
+  
+  ### loop through conditions to get likelihood
+  
+  nll = 0
+  if (private$par_matrix[, .N] < dat[, .N]) {
+    for(i in 1:private$par_matrix[, .N]){
+      sub_dat = copy(dat)
+      for(j in 1:length(private$sim_cond)){
+        sub_dat = sub_dat[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+      }
+      sub_nll = do.call(pulse_nll, c(list(choice = sub_dat[, response],
+                                          rt = sub_dat[, rt],
+                                          stimuli = private$stim_list[[i]]),
+                                     as.list(private$par_matrix[i, -(1:length(private$sim_cond))]),
+                                     bounds=private$bounds,
+                                     urgency=private$urgency,
+                                     ...))
+      nll = nll + sub_nll
     }
+  } else {
+    
+    nll = do.call(pulse_nll, c(list(choice=dat[,response]),
+                               list(rt=dat[, rt]),
+                               stimuli=list(private$stim_list[[1]]),
+                               as.list(private$par_matrix),
+                               bounds=private$bounds,
+                               ...))
   }
-  
-  # get likelihood
-  nll = do.call(pulse_nll, c(list(choice=dat[,response]),
-                             list(rt=dat[, rt]),
-                             stimuli=list(private$stim_mat_list),
-                             as.list(private$par_matrix),
-                             bounds=private$bounds,
-                             ...))
   
   if (is.nan(nll)) browser()
   
@@ -45,44 +63,74 @@ pulse_fp_obj <- function(pars,
   
 }
 
-pulse_chisq_obj <- function(...) stop("Not Implemented!")
 
-
-set_pm_parameters = function(pars){
+#' @noRd
+#' @importFrom foreach %do% %dopar%
+pulse_x2_obj = function(pars,
+                        data_q=NULL,
+                        n_sim=1,
+                        transform_pars=F,
+                        check_constraints=T,
+                        debug=F, ...) {
   
-  # self$par_values = pars
-  # private$par_matrix = copy(private$par_transform)
-  # col_names = names(private$par_matrix)
-  # 
-  # for(i in 1:length(private$par_matrix)){
-  #   private$par_matrix[, col_names[i] := self$par_values[get(col_names[i])]]
-  # }
-  # 
-  # for(i in 1:length(private$fixed)) private$par_matrix[, names(private$fixed[i]) := as.numeric(private$fixed[i])]
+  ### check constraints
   
-  self$par_values = pars
-  private$par_matrix = copy(private$par_transform)
+  checks = private$objective_checks(pars,
+                                    transform_pars,
+                                    check_constraints,
+                                    debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
   
-  for(i in (1+length(private$sim_cond)):(length(private$par_transform))){
+  if (!is.na(pass) & !pass) {
+    nll = 1e10
+    if(debug) cat("nll =", nll, "\n")
+    return(nll)
+  }
+  
+  if (is.null(data_q)) {
+    data_q = copy(self$data_q)
+  }
+  
+  
+  ### loop through conditions to get chisquare
+  
+  pars_only_mat = copy(private$par_matrix)
+  pars_only_mat = pars_only_mat[, -(1:(length(private$sim_cond)))]
+  rt_q_cols = (length(data_q)-length(private$p_q)+2):length(data_q)
+  
+  chisq = 0
+  
+  chisq = foreach::foreach(i=1:private$par_transform[, .N], .combine=sum) %do% {
     
-    this_par = names(private$par_matrix)[[i]]
+    # simulate trials
+    par_list = as.list(pars_only_mat[i])
+    this_sim = setDT(self$simulate(n_sim,
+                                   private$stim_list[[i]],
+                                   as.numeric(par_list),
+                                   names(par_list),
+                                   bounds=private$bounds,
+                                   urgency=private$urgency,
+                                   ...)$behavior)
     
-    if (this_par %in% names(private$as_function)) {
-      
-      fun_par_index = which(self$par_corresponding == this_par)
-      fun_pars = stringr::str_split_fixed(self$par_names[fun_par_index], pattern="_", n=2)[,2]
-      fun_pars_list = list()
-      for (fp in 1:length(fun_pars)) fun_pars_list[[fun_pars[fp]]] = self$par_values[fp]
-      use_cols = which(names(private$par_matrix) %in% formalArgs(private$as_function[[this_par]]))
-      private$par_matrix[[this_par]] = do.call(private$as_function[[this_par]], c(as.list(private$par_matrix[, ..use_cols]), fun_pars_list))
-      
-    } else {
-      
-      private$par_matrix[[this_par]] = self$par_values[private$par_matrix[[this_par]]]
-      
+    # get rt quantile matrix
+    sub_q = copy(data_q)
+    for(j in 1:length(private$sim_cond)) {
+      sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
     }
+    rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+    n_rt = sub_q[, n_response, .(response)][, n_response]
+    sim_rts = list(this_sim[response == 0, rt],
+                   this_sim[response == 1, rt],
+                   this_sim[is.na(response), rt])
+    
+    quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
     
   }
+  
+  if(is.na(chisq)) chisq = 1e10
+  if(debug) cat(chisq, "\n")
+  chisq
   
 }
 
@@ -136,7 +184,7 @@ check_pdm_constraints <- function(){
 #' 
 #' @return modifies the field \code{obj}
 #' 
-set_pdm_objective <- function(objective="fp") {
+set_pdm_objective <- function(objective="chisq") {
   
   if (objective == "fp") {
     self$obj = private$fp_obj
@@ -162,8 +210,8 @@ set_pdm_objective <- function(objective="fp") {
 #' @param pars numeric vector; vector of parameters. If NULL, uses model$solution$pars.
 #' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
 #' @param method string; "euler" for euler-maruyama simulation or "fp" for Fokker-Planck method
-#' @param stim_list list; new list of stimulus matrices
-#' @param trial_code integer vector; list of trial indexes to which the new stimuli are associated with
+#' @param stim_list list of arrays; 2 x timepoints x trials array of stimuli to simulate for each condition
+#' @param trial_code list of integer vector; trial indexes to which the new stimuli are associated with. 
 #' @param ... additional arguments passed to method (either \code{sim_pulse} or \code{pulse_fp_fpt})
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
@@ -172,11 +220,8 @@ set_pdm_objective <- function(objective="fp") {
 #' 
 predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, trial_code=NULL, ...){
   
-  if (is.null(stim_list)) stop("must provide new stimulus for simulation")
-  if ((length(stim_list) != length(private$stim_mat_list)) & (is.null(trial_code))) {
-    stop("new stimulus list is not equal to number of trials")
-  } else if (is.null(trial_code)) {
-    trial_code = 1:length(stim_list)
+  if (is.null(stim_list) | (length(stim_list) != private$par_transform[, .N])) {
+    stop("Must provide a stimulus array for each condition, stored as a list.")
   }
   
   if(is.null(pars)) {
@@ -187,51 +232,119 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
   }
   private$set_params(pars)
   
-  if (method == "euler") {
+  ### loop through conditions
+  
+  d_pred = data.table()
+  
+  if (private$par_matrix[, .N] < self$data[, .N]) {
     
-    d_pred = data.table()
-    
-    for (i in 1:length(stim_list)) {
+    for (i in 1:private$par_matrix[, .N]) {
       
-      this_sim = do.call(sim_pulse, c(n=n, list(stimulus=stim_list[[i]]), as.list(private$par_matrix[trial_code[i]]), bounds=private$bounds, ...))
-      d_pred = rbind(d_pred, setDT(this_sim$behavior))
+      this_stim_trials = dim(stim_list[[i]])[3]
+      
+      # check stimulus lengths and trial code
+      if (is.null(trial_code)) {
+        if ((this_stim_trials != dim(private$stim_list[[i]])[3])) {
+          stop(paste("new stimulus array length for condition", i, "is not equal to number of trials"))
+        } else {
+          this_trial_code = 1:this_stim_trials
+        }
+      } else {
+        if (this_stim_trials != length(trial_code[[i]])) {
+          stop(paste("new stimulus array length for condition", i, "is not equal to length of trial code"))
+        } else {
+          this_trial_code = trial_code[[i]]
+        }
+      }
+      
+      # get predicted behavior
+      if (method == "euler") {
+        
+        this_par_list = as.list(private$par_matrix[i, -(1:length(private$sim_cond))])
+        this_par_values = as.numeric(this_par_list)
+        this_par_names = names(this_par_list)
+        
+        this_sim = self$simulate(n,
+                                 stim_list[[i]],
+                                 this_par_values,
+                                 par_names=this_par_names,
+                                 bounds=private$bounds,
+                                 ...)
+        d_pred = rbind(d_pred, setDT(this_sim$behavior))
+        
+      } else {
+        
+        stop("method not implemented")
+        
+      }
       
     }
     
-    d_pred
-    
-  } else if (method == "fp") {
-    
-    stop("NOT YET IMPLEMENTED")
-    
-    d_pred = data.table()
-    
-    for (i in 1:length(private$stim_mat_list)) {
-      
-      this_fpt = do.call(pulse_fp_fpt, c(list(stimulus=private$stim_mat_list[[i]]), as.list(private$par_matrix[i]), bounds=private$bounds, ...))
-      this_sim = setDT(fpt_to_sim(this_fpt, n=n))
-      d_pred = rbind(d_pred, this_sim)
-      
-    }
-    
-    d_pred
-    
-    
-  } else {
-    
-    stop("method not implemented")
   }
+  
+  d_pred
+  
+}
+
+
+#' simulate pulse model  (for internal use)
+#' 
+#' simulate pulse DDM with given model parameters..
+#' This function is only intended for use with a pulse model object,
+#' and should not be called directly outside of the pulse model class.
+#' Please use \code{sim_pulse} as a standalone function.
+#' 
+#' @usage model$simulate(n, stimuli, par_values, par_names=NULL, ...)
+#'
+#' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
+#' @param stimuli array; 2 x timepoints x trials array of stimuli (can generate using \code{pulse_stimulus} or \code{pulse_sequence})
+#' @param par_values numeric vector; vector of parameters. Must be named vector or used with par_names
+#' @param par_names character vector; vector of parameter names
+#' @param ... additional arguments passed to \code{sim_pulse}
+#'
+#' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
+#' 
+#' @keywords internal
+#' 
+simulate_pulse_model = function(n, stimuli, par_values, par_names=NULL, ...) {
+  
+  if ((missing(stimuli)) | (class(stimuli) != "array")) {
+    stop("must provide stimulus as a 2 x timepoints x trials array.")
+  } 
+  
+  if (missing(par_values)) {
+    stop("No parameters! Must supply parameter vector \"par_values\" as a named vector, 
+         or along with a separate vector \"par_names\" with names of paramters.")
+  }
+  
+  if (is.null(names(par_values))) {
+    if (is.null(par_names)) {
+      stop("No parameter names supplied. \"par_values\" must be a named vector, 
+           or the parameter \"par_names\" must be supplied.")
+    } else {
+      if (length(par_names) != length(par_values)) {
+        stop("\"par_names\" must be the same length as \"par_values\".")
+      }
+      names(par_values) = par_names
+    }
+  }
+  
+  do.call(sim_pulse, c(n=n,
+                       list(stimuli=stimuli),
+                       as.list(par_values),
+                       ...))
+  
 }
 
 
 init_pulse_model = function(dat,
-                            stim_var,
+                            model_name="pdm",
+                            stim_var=NULL,
                             stim_sep="",
                             stim_dur=.01,
                             stim_interval=.1,
                             stim_pre=0,
                             dt=.001,
-                            model_name="pdm",
                             include=NULL,
                             depends_on=NULL,
                             as_function=NULL,
@@ -239,40 +352,15 @@ init_pulse_model = function(dat,
                             fixed_pars=NULL,
                             extra_condition=NULL,
                             bounds=NULL,
-                            objective="fp"){
+                            urgency=NULL,
+                            objective="chisq",
+                            max_time=10,
+                            ...){
   
-  super$initialize(dat, model_name)
-  
-  # get variables used for as_function parameters
-  as_function_vars = NULL
-  if (!is.null(as_function)) {
-    for (i in 1:length(as_function)) {
-      
-      if (class(as_function[[i]]) == "list") {
-        all_args = formals(as_function[[i]][[1]])
-      } else  if (class(as_function[[i]]) == "function"){
-        all_args = formals(as_function[[i]])
-      } else {
-        stop("as_function arguments must be a function or a list with two elements: [1] a function and [2] vector or parameter names")
-      }
-      
-      no_default = sapply(all_args, function(x) x == "")
-      no_default[names(no_default) == "..."] = FALSE
-      as_function_vars = c(as_function_vars, names(all_args)[no_default])
-      
-    }
+  if (is.null(stim_var)) {
+    stop("must provide \"stim_var\" argument, referencing the data column that contains the stimulus train.")
   }
   
-  # get task conditions and rt quantiles
-  sort_var = c(depends_on, extra_condition, as_function_vars, "response")
-  setorderv(self$data, sort_var)
-  simulate_conditions = c(unique(c(depends_on, extra_condition, as_function_vars)))
-  private$as_function = lapply(as_function, function(x) ifelse(class(x) == "function", x, x[[1]]))
-  par_transform = data.table(trial=1:self$data[,.N])
-  if(!is.null(simulate_conditions)){
-    par_transform = cbind(par_transform, self$data[, get(simulate_conditions)])
-    names(par_transform)[2:length(par_transform)] = simulate_conditions
-  }
   
   # set default parameter values
   all_pars = c("a", "t0", "s",
@@ -295,144 +383,60 @@ init_pulse_model = function(dat,
             10, .5, .5,
             100, 1, 5, 2,
             10, 10, 10)
+  default_pars = c("a", "t0", "s")
+  start_if_include = c(sv=0.1,
+                       sz=0.1,
+                       st0=0.1,
+                       lambda=1,
+                       uslope=1,
+                       umag=1,
+                       udelay=1)
   
-  check_default_values = c("sv", "sz", "st0", "lambda", "uslope", "umag", "udelay")
-  for (c in check_default_values) {
-    if ((c %in% include) | (c %in% names(depends_on)) | (c %in% names(as_function))) values[all_pars == c] = 0.1
-  }
+  super$initialize(dat,
+                   model_name,
+                   par_names=all_pars,
+                   par_values=values,
+                   par_lower=lower,
+                   par_upper=upper,
+                   default_pars=default_pars,
+                   start_if_include=start_if_include,
+                   include=include,
+                   depends_on=depends_on,
+                   as_function=as_function,
+                   start_values=start_values,
+                   fixed_pars=fixed_pars,
+                   max_time=max_time,
+                   extra_condition=extra_condition,
+                   bounds=bounds,
+                   urgency=urgency,
+                   ...)
   
-  # check all supplied parameters, remove if not in all_pars
-  rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
-  fixed_pars = fixed_pars[names(fixed_pars) %in% all_pars]
-  rm_include = include[!(include %in% all_pars)]
-  include = include[include %in% all_pars]
-  rm = c(rm_fixed, rm_include)
-  if(length(rm) >= 1)
-    warning("requested variables are not supported :: ", rm, sep=c("", rep(", ", length(rm)-1)))
-  
-  # overwrite defaults with supplied starting values
-  if(length(start_values) > 0)
-    for(i in 1:length(start_values)){
-      values[all_pars==names(start_values)[i]] = start_values[i]
-    }
-  
-  # get parameters to be fit and parameters with fixed values
-  default_pars = c("a","t0", "s")
-  default_pars = default_pars[!(default_pars %in% names(fixed_pars))]
-  include = include[!(include %in% names(fixed_pars))]
-  include = c(default_pars, include)
-  
-  if(length(depends_on) > 0)
-    self$data = self$data[order(get(depends_on))]
-  par_names = character()
-  par_corresponding = character()
-  par_values = numeric()
-  par_lower = numeric()
-  par_upper = numeric()
-  par_transform = cbind(par_transform, matrix(0,nrow=self$data[,.N],ncol=length(include),dimnames=list(NULL,include)))
-  for(i in 1:length(all_pars)){
-    if(all_pars[i] %in% include){
-      if(all_pars[i] %in% names(depends_on)){
-        conds = self$data[, unique(get(depends_on[all_pars[i]]))]
-        for(j in conds){
-          par_names = c(par_names, paste(all_pars[i], j, sep="_"))
-          par_corresponding = c(par_corresponding, all_pars[i])
-          par_values = c(par_values, values[i])
-          par_lower = c(par_lower, lower[i])
-          par_upper = c(par_upper, upper[i])
-          par_transform[get(depends_on[all_pars[i]]) == j, (all_pars[i]) := length(par_values)]
-        }
-      }else if(all_pars[i] %in% names(as_function)){
-        if(class(as_function[[all_pars[i]]]) == "function") {
-          fun_args = formals(as_function[[all_pars[i]]])
-          has_default = sapply(all_args, function(x) x != "")
-          fun_args = fun_args[has_default]
-          fun_names = names(fun_args)
-          fun_vals = unname(unlist(fun_args))
-          fun_lower = rep(-Inf, length(fun_vals))
-          fun_upper = rep(Inf, length(fun_vals))
-        } else {
-          fun_args = formals(as_function[[all_pars[i]]][[1]])
-          has_default = sapply(all_args, function(x) x != "")
-          fun_args = fun_args[has_default]
-          fun_names = names(fun_args)
-          fun_vals = unname(unlist(fun_args))
-          fun_lower = as_function[[all_pars[i]]][[2]][1,]
-          fun_upper = as_function[[all_pars[i]]][[2]][2,]
-        }
-        
-        par_names = c(par_names, paste(all_pars[i], fun_names, sep="_"))
-        par_corresponding = c(par_corresponding, rep(all_pars[i], length(par_names)))
-        par_values = c(par_values, fun_vals)
-        par_lower = c(par_lower, fun_lower)
-        par_upper = c(par_upper, fun_upper)
-        par_transform[, all_pars[i] := NA]
-        
-      }else{
-        par_names = c(par_names, all_pars[i])
-        par_corresponding = c(par_corresponding, all_pars[i])
-        par_values = c(par_values, values[i])
-        par_lower = c(par_lower, lower[i])
-        par_upper = c(par_upper, upper[i])
-        par_transform[, (all_pars[i]) := length(par_values)]
-      }
-    }else{
-      if(!(all_pars[i] %in% names(fixed_pars))){
-        message(paste("parameter ::", all_pars[i], "is not specified, including as fixed parameter with value =", values[i]))
-        fixed_pars = c(fixed_pars, values[i])
-        names(fixed_pars)[length(fixed_pars)] = all_pars[i]
-      }
-    }
-  }
-  
-  rm_trans_par_cols = 1 + ifelse(is.null(simulate_conditions), 0, length(simulate_conditions))
-  par_transform = par_transform[, -(1:rm_trans_par_cols)]
-  
-  self$par_names=par_names
-  self$par_corresponding=par_corresponding
-  self$start_values=par_values
   self$set_objective(objective)
   
-  private$dt=dt
-  private$lower=par_lower
-  private$upper=par_upper
-  private$fixed=fixed_pars
-  private$par_transform=par_transform
-  private$sim_cond=simulate_conditions
-  
-  if (is.null(bounds)) {
-    if("aprime" %in% par_corresponding) {
-      private$bounds = 2L
-    } else if (any(c("kappa", "tc") %in% par_corresponding)) {
-      private$bounds = 1L
-    } else {
-      private$bounds = 0L
-    }
-  } else {
-    if (!bounds %in% c("fixed", "hyperbolic", "weibull", "linear")) {
-      warning("specified bounds not supported, using fixed bounds.")
-      private$bounds = 0L
-    } else {
-      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull", "linear"))) - 1
+  private$stim_list = list()
+  for(i in 1:private$par_transform[, .N]) {
+    dsub = copy(self$data)
+    for (c in private$sim_cond) {
+      dsub = dsub[get(c) == private$par_transform[i, get(c)]]
     }
     
+    up_stims = dsub[, get(stim_var[1])]
+    if (length(stim_var) > 1) {
+      down_stims = dsub[, get(stim_var[2])]
+    } else {
+      down_stims = NULL
+    }
+    
+    private$stim_list[[i]] = pulse_stimulus(up_stims,
+                                            down_stims,
+                                            pattern=stim_sep,
+                                            dur=stim_dur,
+                                            isi=stim_interval,
+                                            pre_stim=stim_pre,
+                                            dt=dt,
+                                            as_array=T)
+    
   }
-  
-  # get trial by trial stimuli
-  up_stims = self$data[[stim_var[1]]]
-  if (length(stim_var) > 1) {
-    down_stims = self$data[[stim_var[2]]]
-  } else {
-    down_stims = NULL
-  }
-  
-  private$stim_mat_list = pulse_stimulus(up_stims,
-                                         down_stims,
-                                         pattern=stim_sep,
-                                         dur=stim_dur,
-                                         isi=stim_interval,
-                                         pre_stim=stim_pre,
-                                         dt=dt)
   
 }
 
@@ -450,12 +454,14 @@ init_pulse_model = function(dat,
 #' \item{pm$set_objective: \code{\link{set_pdm_objective}}}
 #' \item{pm$fit: \code{\link{fit_diffusion_model}}}
 #' \item{pm$predict: \code{\link{predict_pulse_model}}}
+#' \item{pm$simulate: \code{\link{simulate_pulse_model}}}
 #' }
 #' 
-#' @usage pdm <- pulse_model$new(dat, stim_var, stim_sep="", stim_dur=.01, stim_interval=.1, model_name="pdm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds=0L, objective="fp")
-#' @usage pdm$set_objective(objective="fp")
-#' @usage pdm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
-#' @usage dm$predict(pars=NULL, n=10000, ...)
+#' @usage pm <- pulse_model$new(dat, stim_var, stim_sep="", stim_dur=.01, stim_interval=.1, model_name="pdm", include=NULL, depends_on=NULL, as_function=NULL, start_values=NULL, fixed_pars=NULL, extra_condition=NULL, bounds=0L, objective="fp")
+#' @usage pm$set_objective(objective="fp")
+#' @usage pm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
+#' @usage pm$predict(pars=NULL, n=10000, ...)
+#' @usage pm$simulate(n, stimuli, par_values, par_names=NULL, ...)
 #'
 #' @param dat data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)
 #' @param stim_var string; name of stimulus column in dat. If two names, first is upper boundary evidence and second is lower boundary evidence. If one variable name, assumes binary evidence with 1=evidence to upper boundary and  0=evidence to lower boundary
@@ -482,14 +488,14 @@ pulse_model = R6::R6Class("pulse_model",
                           public=list(
                             initialize=init_pulse_model,
                             set_objective=set_pdm_objective,
-                            predict=predict_pulse_model
+                            predict=predict_pulse_model,
+                            simulate=simulate_pulse_model
                           ), private=list(
                             dt=NULL,
                             as_function=NULL,
-                            stim_mat_list=NULL,
+                            stim_list=NULL,
                             bounds=NULL,
-                            set_params=set_pm_parameters,
                             check_par_constraints=check_pdm_constraints,
                             fp_obj = pulse_fp_obj,
-                            chisq_obj = pulse_chisq_obj
+                            chisq_obj = pulse_x2_obj
                           ))

@@ -27,7 +27,8 @@ sim_pulse(
   bounds = 0L,
   urgency = 0L,
   n_threads = 1L,
-  return_accu = FALSE
+  return_accu = FALSE,
+  seed = -1L
 )
 }
 \arguments{
@@ -76,6 +77,8 @@ sim_pulse(
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
 
 \item{return_accu}{bool; if True, return full trajectory of accumulators}
+
+\item{seed}{int; set random seed (for zrandn)}
 }
 \value{
 List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories

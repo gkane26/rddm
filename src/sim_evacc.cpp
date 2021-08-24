@@ -1,6 +1,6 @@
-#include "RcppArmadillo.h"
-#include "RcppZiggurat.h"
-#include "omp.h"
+#include <RcppArmadillo.h>
+#include <RcppZiggurat.h>
+#include <omp.h>
 #include "bounds.h"
 
 // [[Rcpp::depends(RcppArmadillo)]]

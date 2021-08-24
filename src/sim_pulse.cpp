@@ -1,14 +1,11 @@
-#include "RcppArmadillo.h"
-#include "dqrng.h"
-#include "RcppZiggurat.h"
-#include "omp.h"
+#include <RcppArmadillo.h>
+#include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
 #include "fast_rand.h"
-#include "Rcpp/Benchmark/Timer.h"
 
 using namespace Rcpp;
-// [[Rcpp::depends(RcppArmadillo, dqrng, RcppZiggurat)]]
+// [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
 
 
@@ -37,6 +34,7 @@ using namespace Rcpp;
 //' @param urgency int: 0 for none, 1 for linear, 2 for logistic
 //' @param n_threads integer; number of threads to run in parallel, default = 1
 //' @param return_accu bool; if True, return full trajectory of accumulators
+//' @param seed int; set random seed (for zrandn)
 //'
 //' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 //' 
@@ -48,7 +46,11 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
                double lambda=0, double aprime=0, double kappa=0, double tc=.25, 
                double uslope=0, double umag=0, double udelay=0,
                double v_scale=1, double dt=.001, int bounds=0, int urgency=0,
-               int n_threads=1, bool return_accu=false){
+               int n_threads=1, bool return_accu=false, int seed=-1){
+  
+  if (seed >= 0) {
+    zrandseed(seed);
+  }
   
   int n_total = n * stimuli.n_slices;
   int thread_leftover = n_total % n_threads;
@@ -163,8 +165,6 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
   DataFrame sim = DataFrame::create(Named("trial") = trial_vector,
                                     Named("response") = response_full,
                                     Named("rt") = rt_full+t0+st0*(arma::randu(n_total)-.5));
-  
-  return List::create();
   
   if (return_accu) {
     return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
