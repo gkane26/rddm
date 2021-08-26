@@ -40,6 +40,7 @@ pulse_fp_obj <- function(pars,
                                           rt = sub_dat[, rt],
                                           stimuli = private$stim_list[[i]]),
                                      as.list(private$par_matrix[i, -(1:length(private$sim_cond))]),
+                                     v_scale=private$v_scale,
                                      bounds=private$bounds,
                                      urgency=private$urgency,
                                      ...))
@@ -51,7 +52,9 @@ pulse_fp_obj <- function(pars,
                                list(rt=dat[, rt]),
                                stimuli=list(private$stim_list[[1]]),
                                as.list(private$par_matrix),
+                               v_scale=private$v_scale,
                                bounds=private$bounds,
+                               urgency=private$urgency,
                                ...))
   }
   
@@ -71,7 +74,8 @@ pulse_x2_obj = function(pars,
                         n_sim=1,
                         transform_pars=F,
                         check_constraints=T,
-                        debug=F, ...) {
+                        debug=F,
+                        ...) {
   
   ### check constraints
   
@@ -101,7 +105,7 @@ pulse_x2_obj = function(pars,
   
   chisq = 0
   
-  chisq = foreach::foreach(i=1:private$par_transform[, .N], .combine=sum) %do% {
+  for (i in 1:private$par_transform[, .N]) {
     
     # simulate trials
     par_list = as.list(pars_only_mat[i])
@@ -109,8 +113,6 @@ pulse_x2_obj = function(pars,
                                    private$stim_list[[i]],
                                    as.numeric(par_list),
                                    names(par_list),
-                                   bounds=private$bounds,
-                                   urgency=private$urgency,
                                    ...)$behavior)
     
     # get rt quantile matrix
@@ -124,7 +126,7 @@ pulse_x2_obj = function(pars,
                    this_sim[response == 1, rt],
                    this_sim[is.na(response), rt])
     
-    quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
+    chisq = chisq + quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
     
   }
   
@@ -332,6 +334,9 @@ simulate_pulse_model = function(n, stimuli, par_values, par_names=NULL, ...) {
   do.call(sim_pulse, c(n=n,
                        list(stimuli=stimuli),
                        as.list(par_values),
+                       v_scale=private$v_scale,
+                       bounds=private$bounds,
+                       urgency=private$urgency,
                        ...))
   
 }
@@ -351,6 +356,7 @@ init_pulse_model = function(dat,
                             start_values=NULL,
                             fixed_pars=NULL,
                             extra_condition=NULL,
+                            v_scale=1,
                             bounds=NULL,
                             urgency=NULL,
                             objective="chisq",
@@ -368,23 +374,23 @@ init_pulse_model = function(dat,
                "sv", "sz", "st0",
                "lambda", "aprime", "kappa", "tc",
                "uslope", "udelay", "umag")
-  values = c(1, .3, 1,
+  values = c(5, .3, 1,
              .5, 0,
              0, 0, 0,
              0, 0.5, 1, .25,
              0, 0, 0)
   lower = c(.1, 1e-10, 1e-10,
-            .2, -100,
+            .05, -100,
             0, 0, 0,
             0, 0, 0, 1e-10,
             0, 0, 0)
-  upper = c(10, 1, 5,
-            .8, 100,
-            10, .5, .5,
-            100, 1, 5, 2,
+  upper = c(25, 5, 100,
+            .95, 100,
+            100, .75, 2,
+            100, 1, 5, 5,
             10, 10, 10)
   default_pars = c("a", "t0", "s")
-  start_if_include = c(sv=0.1,
+  start_if_include = c(sv=1,
                        sz=0.1,
                        st0=0.1,
                        lambda=1,
@@ -410,6 +416,8 @@ init_pulse_model = function(dat,
                    bounds=bounds,
                    urgency=urgency,
                    ...)
+  
+  private$v_scale = v_scale
   
   self$set_objective(objective)
   
@@ -494,7 +502,7 @@ pulse_model = R6::R6Class("pulse_model",
                             dt=NULL,
                             as_function=NULL,
                             stim_list=NULL,
-                            bounds=NULL,
+                            v_scale=NULL,
                             check_par_constraints=check_pdm_constraints,
                             fp_obj = pulse_fp_obj,
                             chisq_obj = pulse_x2_obj
