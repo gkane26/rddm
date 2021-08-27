@@ -207,7 +207,7 @@ init_model = function(dat,
   sort_var = c(depends_on, extra_condition, as_function_vars, "correctSide", "response")
   setorderv(self$data, sort_var)
   simulate_conditions = c("correctSide", unique(c(depends_on, extra_condition, as_function_vars)))
-  self$data = self$data[rt < max_time]
+  # self$data = self$data[rt < max_time]
   q_list = get_rt_quantiles(self$data, conditions = simulate_conditions, ...)
   self$data_q = q_list[[1]]
   private$p_q = q_list[[2]]

@@ -386,7 +386,7 @@ init_pulse_model = function(dat,
             0, 0, 0)
   upper = c(25, 5, 100,
             .95, 100,
-            100, .75, 2,
+            1, 1, 2,
             100, 1, 5, 5,
             10, 10, 10)
   default_pars = c("a", "t0", "s")

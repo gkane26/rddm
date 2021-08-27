@@ -23,6 +23,8 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions=NUL
                                  rep(NA, length(qs)))),
               c(conditions)]
   
+  rt_qs[, p_response := n_response / sum(n_response), c(conditions)]
+  
   list(rt_qs, p_q)
   
 }
