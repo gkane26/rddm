@@ -165,6 +165,7 @@ init_model = function(dat,
   }
   
   if (!("correctSide" %in% names(dat))){
+    warning("\"correctSide\" not in data, setting it to 1.")
     dat$correctSide = 1
   }
   

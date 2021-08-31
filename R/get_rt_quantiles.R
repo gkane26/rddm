@@ -21,9 +21,13 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions=NUL
                            rbind(quantile(get(rt_var)[(response == 0) & !(is.na(response))], qs),
                                  quantile(get(rt_var)[(response == 1) & !(is.na(response))], qs),
                                  rep(NA, length(qs)))),
-              c(conditions)]
+              by=c(conditions)]
   
-  rt_qs[, p_response := n_response / sum(n_response), c(conditions)]
+  if (is.null(conditions)) {
+    rt_qs[, p_response := n_response / sum(n_response)]
+  } else {
+    rt_qs[, p_response := n_response / sum(n_response), by=c(conditions)]
+  }
   
   list(rt_qs, p_q)
   
