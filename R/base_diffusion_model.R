@@ -77,7 +77,7 @@ fit_diffusion_model <- function(use_bounds=FALSE, transform_pars=FALSE, n_cores=
 }
 
 
-set_params = function(pars){
+set_params = function(pars, reverse_v=T){
   self$par_values = pars
   private$par_matrix = copy(private$par_transform)
   
@@ -103,8 +103,10 @@ set_params = function(pars){
     
   }
   
-  if("v" %in% names(private$par_matrix) & !("v" %in% names(private$as_function)))
-    private$par_matrix[correctSide==0, v := -v]
+  if (reverse_v) {
+    if("v" %in% names(private$par_matrix) & !("v" %in% names(private$as_function)))
+      private$par_matrix[correctSide==0, v := -v]
+  }
   
 }
 
@@ -112,6 +114,7 @@ set_params = function(pars){
 objective_checks = function(pars,
                             transform_pars=F,
                             check_constraints=T,
+                            reverse_v=T,
                             debug=F) {
   
   ### check params
@@ -126,7 +129,7 @@ objective_checks = function(pars,
     cat(" // ")
   }
   
-  private$set_params(pars)
+  private$set_params(pars, reverse_v=reverse_v)
   
   if(check_constraints){
     pass_checks = private$check_par_constraints()
@@ -135,7 +138,7 @@ objective_checks = function(pars,
   }
   
   list(pars, pass_checks)
-
+  
 }
 
 

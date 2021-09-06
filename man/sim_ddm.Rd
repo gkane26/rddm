@@ -26,7 +26,8 @@ sim_ddm(
   bounds = 0L,
   urgency = 0L,
   n_threads = 1L,
-  return_accu = FALSE
+  return_accu = FALSE,
+  seed = -1L
 )
 }
 \arguments{

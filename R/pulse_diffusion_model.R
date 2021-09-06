@@ -13,6 +13,7 @@ pulse_fp_obj <- function(pars,
   checks = private$objective_checks(pars,
                                     transform_pars,
                                     check_constraints,
+                                    reverse_v=F,
                                     debug)
   pars = checks[[1]]
   pass = checks[[2]]
@@ -82,6 +83,7 @@ pulse_x2_obj = function(pars,
   checks = private$objective_checks(pars,
                                     transform_pars,
                                     check_constraints,
+                                    reverse_v=F,
                                     debug)
   pars = checks[[1]]
   pass = checks[[2]]
@@ -109,11 +111,20 @@ pulse_x2_obj = function(pars,
     
     # simulate trials
     par_list = as.list(pars_only_mat[i])
-    this_sim = setDT(self$simulate(n_sim,
-                                   private$stim_list[[i]],
-                                   as.numeric(par_list),
-                                   names(par_list),
-                                   ...)$behavior)
+    
+    # this_sim = setDT(self$simulate(n_sim,
+    #                                private$stim_list[[i]],
+    #                                as.numeric(par_list),
+    #                                names(par_list),
+    #                                ...)$behavior)
+    
+    this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
+                                          list(stimuli=private$stim_list[[i]]),
+                                          par_list,
+                                          v_scale=private$v_scale,
+                                          bounds=private$bounds,
+                                          urgency=private$urgency,
+                                          ...))$behavior)
     
     # get rt quantile matrix
     sub_q = copy(data_q)
@@ -140,21 +151,22 @@ pulse_x2_obj = function(pars,
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
   
-  checks = sum(private$par_matrix[, (a <= 0) | (a > 10)]) # a
-  checks = checks + sum(private$par_matrix[, (t0 < 0) | (t0 > 1)]) # t0
-  checks = checks + sum(private$par_matrix[, s <= 0]) # s
+  checks = sum(private$par_matrix[, (a <= 0)]) # a
+  checks = checks + sum(private$par_matrix[, (t0 < 0)]) # t0
+  if ("s" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, s <= 0]) # s
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   else
     z = 0.5
   if ("sv" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sv < 0) | (sv > 100)]) # sv
+    checks = checks + sum(private$par_matrix[, (sv < 0)]) # sv
   if ("sz" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("lambda" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (lambda < 0) | (lambda > 100)]) # lambda
+    checks = checks + sum(private$par_matrix[, (lambda < 0)]) # lambda
   if ("aprime" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
@@ -369,28 +381,28 @@ init_pulse_model = function(dat,
   
   
   # set default parameter values
-  all_pars = c("a", "t0", "s",
-               "z", "dc",
+  all_pars = c("v", "a", "t0",
+               "s", "z", "dc",
                "sv", "sz", "st0",
                "lambda", "aprime", "kappa", "tc",
                "uslope", "udelay", "umag")
-  values = c(5, .3, 1,
-             .5, 0,
+  values = c(1, 2, .3,
+             1, .5, 0,
              0, 0, 0,
              0, 0.5, 1, .25,
              0, 0, 0)
-  lower = c(.1, 1e-10, 1e-10,
-            .05, -100,
+  lower = c(-100, .1, 1e-10,
+            1e-10, .05, -100,
             0, 0, 0,
             0, 0, 0, 1e-10,
             0, 0, 0)
-  upper = c(25, 5, 100,
-            .95, 100,
+  upper = c(100, 25, 5,
+            100, .95, 100,
             1, 1, 2,
             100, 1, 5, 5,
             10, 10, 10)
-  default_pars = c("a", "t0", "s")
-  start_if_include = c(sv=1,
+  default_pars = c("v", "a", "t0")
+  start_if_include = c(sv=0.1,
                        sz=0.1,
                        st0=0.1,
                        lambda=1,

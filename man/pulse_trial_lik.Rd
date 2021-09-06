@@ -8,9 +8,10 @@ pulse_trial_lik(
   choice,
   rt,
   stimulus,
+  v,
   a,
   t0,
-  s,
+  s = 1,
   z = 0.5,
   dc = 0,
   sv = 0,
@@ -36,6 +37,8 @@ pulse_trial_lik(
 \item{rt}{numeric; response time on trial}
 
 \item{stimulus}{matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)}
+
+\item{v}{numeric; drift rate}
 
 \item{a}{numeric; initial boundary}
 

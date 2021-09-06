@@ -6,9 +6,10 @@
 \usage{
 pulse_fp_fpt(
   stimulus,
+  v,
   a,
   t0,
-  s,
+  s = 1,
   z = 0.5,
   dc = 0,
   sv = 0,
@@ -30,6 +31,8 @@ pulse_fp_fpt(
 }
 \arguments{
 \item{stimulus}{matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)}
+
+\item{v}{numeric; drift rate}
 
 \item{a}{numeric; initial boundary}
 

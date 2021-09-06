@@ -41,7 +41,9 @@ check_ddm_constraints <- function(){
 set_ddm_objective <- function(objective=NULL) {
   
   if (is.null(objective)) {
-    if(("aprime" %in% self$par_names) | ("kappa" %in% self$par_names) | ("tc" %in% self$par_names)) {
+    if (("uslope" %in% self$par_names) | ("udelay" %in% self$par_names) | ("umag" %in% self$par_names)) {
+      self$obj = private$chisq_obj
+    } else if(("aprime" %in% self$par_names) | ("kappa" %in% self$par_names) | ("tc" %in% self$par_names)) {
       self$obj = private$integral_obj
     } else {
       self$obj = private$rtdists_obj
@@ -53,7 +55,10 @@ set_ddm_objective <- function(objective=NULL) {
   } else if (objective == "chisq") {
     self$obj = private$chisq_obj
   } else {
-    if(("aprime" %in% self$par_names) | ("kappa" %in% self$par_names) | ("tc" %in% self$par_names)) {
+    if (("uslope" %in% self$par_names) | ("udelay" %in% self$par_names) | ("umag" %in% self$par_names)) {
+      message("specified objective not supported, using chisq method with urgency signal.")
+      self$obj = private$chisq_obj
+    } else if(("aprime" %in% self$par_names) | ("kappa" %in% self$par_names) | ("tc" %in% self$par_names)) {
       message("specified objective not supported, using integral method with collapsing bounds.")
       self$obj = private$integral_obj
     } else {
@@ -82,10 +87,26 @@ init_diffusion_model = function(dat,
                                 ...){
   
   # set default parameter values
-  all_pars = c("v", "a", "t0", "z", "dc", "sv", "st0", "sz", "aprime", "kappa", "tc", "uslope", "udelay", "umag")
-  values = c(1, 1.5, .3, .5, 0, 0, 0, 0, 0.25, 1, 0.25, 0, 0, 0)
-  lower = c(-10, 0, 0, .2, -10, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-  upper = c(10, 10, 1, .8, 10, 1, .25, .2, 1, 10, 2, 10, 10, 10)
+  all_pars = c("v", "a", "t0",
+               "z", "dc",
+               "sv", "st0", "sz",
+               "aprime", "kappa", "tc",
+               "uslope", "udelay", "umag")
+  values = c(1, 1.5, .3,
+             .5, 0,
+             0, 0, 0,
+             0.25, 1, 0.25,
+             0, 0, 0)
+  lower = c(-10, 0, 0,
+            .2, -10,
+            0, 0, 0,
+            0, 0, 0,
+            0, 0, 0)
+  upper = c(10, 10, 1,
+            .8, 10,
+            1, .25, .2,
+            1, 10, 2,
+            10, 10, 10)
   default_pars = c("v", "a", "t0")
   start_if_include = c(sv=0.1, sz=0.1, st0=0.1, uslope=1, udelay=1, umag=1)
   

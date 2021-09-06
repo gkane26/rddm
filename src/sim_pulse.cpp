@@ -13,6 +13,7 @@ using namespace Rcpp;
 //'
 //' @param n integer; number of decisions to simulate
 //' @param stimuli cube; stimuli to simulate, 2 rows X timepoints x trials.
+//' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
 //' @param s numeric; standard deviation in wiener diffusion noise
@@ -40,8 +41,8 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
-               double z=.5, double dc=0,
+List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
+               double s=1, double z=.5, double dc=0,
                double sv=0, double st0=0, double sz=0,
                double lambda=0, double aprime=0, double kappa=0, double tc=.25, 
                double uslope=0, double umag=0, double udelay=0,
@@ -61,6 +62,7 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
   }
   arma::uvec thread_starts = arma::cumsum(n_on_thread);
   
+  v *= v_scale;
   sv *= v_scale;
   dc *= v_scale;
   
@@ -129,7 +131,7 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
       stim0 = stim0(trials_drifting);
       stim1 = stim1(trials_drifting);
 
-      v_var(still_drift) = v_scale + sqrt(sv) * zrandn(still_drift.n_elem);
+      v_var(still_drift) = v + sqrt(sv) * zrandn(still_drift.n_elem);
 
       x(still_drift) += (gamma(step) * dW * zrandn(still_drift.n_elem)) +
         (gamma(step) * ((v_var(still_drift) + dc) % stim0 * dt)) +
@@ -162,9 +164,12 @@ List sim_pulse(int n, arma::cube stimuli, double a, double t0, double s,
     
   }
   
+  arma::vec t0_vec = t0 + st0 * (arma::randu(n_total) - 0.5);
+  t0_vec.clamp(0, arma::datum::inf);
+  
   DataFrame sim = DataFrame::create(Named("trial") = trial_vector,
                                     Named("response") = response_full,
-                                    Named("rt") = rt_full+t0+st0*(arma::randu(n_total)-.5));
+                                    Named("rt") = rt_full+t0_vec);
   
   if (return_accu) {
     return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);

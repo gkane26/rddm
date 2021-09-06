@@ -109,6 +109,7 @@ zrandseed <- function(s) {
 #' Get first passage time distribution of pulse diffusion model by simulating probability mass
 #'
 #' @param stimulus matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)
+#' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param s numeric; standard deviation in wiener diffusion noise
@@ -133,8 +134,8 @@ zrandseed <- function(s) {
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
-    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
+pulse_fp_fpt <- function(stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
+    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
 }
 
 #' Get pulse model likelihood for a given trial
@@ -142,6 +143,7 @@ pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, s
 #' @param choice int; decision on trial, 0 for lower boundary, 1 for upper
 #' @param rt numeric; response time on trial
 #' @param stimulus matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)
+#' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param s numeric; standard deviation in wiener diffusion noise
@@ -166,8 +168,8 @@ pulse_fp_fpt <- function(stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, s
 #' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
-    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
+pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
+    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
 }
 
 #' Get pulse model negative log likelihood for a set of trials
@@ -177,6 +179,7 @@ pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv 
 #' @param stimuli array; 2 x timepoints x trials array of pulse stimuli
 #' @param up_sequence vector of strings; string of 0s, and 1s of stimulus values (0 no evidence, 1 to upper). If down_sequence not specified, (0 to lower, 1 to upper).
 #' @param down_sequence vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)
+#' @param v numeric; drift rate, either single value or vector for each trial
 #' @param a numeric; initial boundary, either single value or vector for each trial
 #' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 #' @param t0 numeric; non-decision time, either single value or vector for each trial
@@ -203,8 +206,8 @@ pulse_trial_lik <- function(choice, rt, stimulus, a, t0, s, z = 0.5, dc = 0, sv 
 #' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, stimuli, a, t0, s, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L, n_threads = 1L) {
-    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, check_pars, v_scale, dt, xbins, bounds, urgency, n_threads)
+pulse_nll <- function(choices, rt, stimuli, v, a, t0, s = 0L, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L, n_threads = 1L) {
+    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, check_pars, v_scale, dt, xbins, bounds, urgency, n_threads)
 }
 
 #' Get predicted behavior from pulse model
@@ -281,8 +284,8 @@ pulse_trial_stimulus <- function(stim_seq, dur = 0.01, isi = 0.1, pre_stim = 0, 
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
 #' @export
-sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, s = 1, dt = .001, max_time = 10, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE) {
-    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, uslope, umag, udelay, s, dt, max_time, bounds, urgency, n_threads, return_accu)
+sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, s = 1, dt = .001, max_time = 10, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE, seed = -1L) {
+    .Call('_rddm_sim_ddm', PACKAGE = 'rddm', n, v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, uslope, umag, udelay, s, dt, max_time, bounds, urgency, n_threads, return_accu, seed)
 }
 
 #' Simulate drift diffusion model with fixed or collapsing boundary
@@ -355,6 +358,7 @@ sim_evacc <- function(n, stimuli, a, t0, z = 0, dc = 0, sv = 0, st0 = 0, sz = 0,
 #'
 #' @param n integer; number of decisions to simulate
 #' @param stimuli cube; stimuli to simulate, 2 rows X timepoints x trials.
+#' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
 #' @param s numeric; standard deviation in wiener diffusion noise
@@ -381,8 +385,8 @@ sim_evacc <- function(n, stimuli, a, t0, z = 0, dc = 0, sv = 0, st0 = 0, sz = 0,
 #' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 #' 
 #' @export
-sim_pulse <- function(n, stimuli, a, t0, s, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE, seed = -1L) {
-    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimuli, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu, seed)
+sim_pulse <- function(n, stimuli, v, a, t0, s = 1, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE, seed = -1L) {
+    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimuli, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu, seed)
 }
 
 #' Urgency functions

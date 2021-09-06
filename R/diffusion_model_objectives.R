@@ -92,78 +92,69 @@ ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug
 
 #' @noRd
 #' @importFrom foreach %dopar%
-ddm_sim_x2 = function(pars, dat=NULL, n_sim=10000, transform_pars=F, debug_lik=F, qs=seq(.1, .9, .2), rt_var="rt", conditions=c("correctSide"), ...){
+ddm_sim_x2 = function(pars,
+                      data_q=NULL,
+                      n_sim=10000,
+                      transform_pars=F,
+                      check_constraints=T,
+                      debug=F,
+                      ...){
   
-  if(is.null(dat))
-    dat_q = self$data_q
-  else
-    dat_q = get_rt_quantiles(dat, qs=qs, rt_var=rt_var, conditions=conditions)
+  ### check constraints
   
-  #check params
-  if(transform_pars){
-    pars = private$logistic(pars)
+  checks = private$objective_checks(pars,
+                                    transform_pars,
+                                    check_constraints,
+                                    debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
+  
+  if (!is.na(pass) & !pass) {
+    nll = 1e10
+    if(debug) cat("nll =", nll, "\n")
+    return(nll)
   }
   
-  private$set_params(pars)
+  if (is.null(data_q)) {
+    data_q = copy(self$data_q)
+  }
   
-  if (!private$check_par_constraints()) return(1e10)
+  ### loop through conditions to get chisquare
   
   pars_only_mat = copy(private$par_matrix)
-  pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
+  pars_only_mat = pars_only_mat[, -(1:(length(private$sim_cond)))]
+  rt_q_cols = (length(data_q)-length(private$p_q)+2):length(data_q)
   
-  # loop through conditions to get likelihood
   chisq = 0
-  rt_q_idx = ((length(dat_q)-length(private$p_q)+2):length(dat_q))
-  for(i in 1:pars_only_mat[, .N]){
-    sub_q = copy(dat_q)
-    for(j in 1:length(private$sim_cond)){
+  
+  for (i in 1:private$par_transform[, .N]) {
+    
+    # simulate trials
+    par_list = as.list(pars_only_mat[i])
+    this_sim = setDT(do.call(sim_ddm, c(n=n_sim,
+                                          par_list,
+                                          bounds=private$bounds,
+                                          urgency=private$urgency,
+                                          max_time=private$max_time,
+                                          ...))$behavior)
+    
+    # get rt quantile matrix
+    sub_q = copy(data_q)
+    for(j in 1:length(private$sim_cond)) {
       sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
     }
-    this_sim = setDT(do.call(sim_ddm, c(n=n_sim, as.list(pars_only_mat[i], private$fixed), max_time=private$max_time, bounds=private$bounds, ...)))
+    rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+    n_rt = sub_q[, n_response, .(response)][, n_response]
+    sim_rts = list(this_sim[response == 0, rt],
+                   this_sim[response == 1, rt],
+                   this_sim[is.na(response), rt])
     
-    # chisq for overtime trials
-    if(length(sub_q[response==-1, n_response])==0){
-      chisq_ot = 0
-    }else{
-      exp = sub_q[response==-1, p_response] * n
-      obs = this_sim[response==-1, .N]
-      chisq_ot = (obs-exp)^2/exp
-    }
-    
-    # get cumulative response times from simulated data
-    sim_fpt = sim_to_fpt(this_sim)
-    cum_fpt = apply(sim_fpt, 2, cumsum)
-    total_response = apply(sim_fpt, 2, sum)
-    
-    # chisq for down boundary decisions
-    n_down = sub_q[response==0, n_response]
-    if(length(n_down)==0) n_down = 0
-    if(n_down < 5){
-      chisq_down = 0
-    }else{
-      exp = sub_q[response==0, p_response] * n_sim * private$p_q
-      t_idx = round(as.numeric(sub_q[response==0, rt_q_idx, with=F])/.01)
-      sim_hist_down = diff(c(0, cum_fpt[t_idx, 2], total_response[2]))
-      chisq_down = sum((sim_hist_down - exp)^2/exp)
-    }
-    
-    # chisq for up boundary decisions
-    n_up = sub_q[response==1, n_response]
-    if(length(n_up)==0) n_up = 0
-    if(n_up < 5){
-      chisq_up = 0
-    }else{
-      exp = sub_q[response==1, p_response] * n_sim* private$p_q
-      t_idx = round(as.numeric(sub_q[response==1, rt_q_idx, with=F])/.01)
-      sim_hist_up = diff(c(0, cum_fpt[t_idx, 1], total_response[1]))
-      chisq_up = sum((sim_hist_up - exp)^2/exp)
-    }
-    
-    chisq = chisq + chisq_ot + chisq_down + chisq_up
+    chisq = chisq + quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
     
   }
   
   if(is.na(chisq)) chisq = 1e10
-  if(debug_lik) cat(chisq, "\n")
+  if(debug) cat(chisq, "\n")
   chisq
+  
 }

@@ -12,6 +12,7 @@ using namespace Rcpp;
 //' Get first passage time distribution of pulse diffusion model by simulating probability mass
 //'
 //' @param stimulus matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)
+//' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
 //' @param s numeric; standard deviation in wiener diffusion noise
@@ -37,13 +38,15 @@ using namespace Rcpp;
 //'
 //' @export
 // [[Rcpp::export]]
-arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double z=0.5, double dc=0,
+arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
+                       double s=1, double z=0.5, double dc=0,
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
                        double uslope=0, double umag=0, double udelay=0,
                        double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   // scale drift rate
+  v *= v_scale;
   sv *= v_scale;
   dc *= v_scale;
   
@@ -110,9 +113,9 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
     up_bound_index = arma::min(arma::find(bin_breaks >= bound(t)))+1;
     
     // get transition matrix
-    double sigma2 = gamma(t)*gamma(t)*s*s*dt + gamma(t)*sv*abs(stimulus(0, t)*(v_scale+dc))*dt*dt + gamma(t)*sv*abs(stimulus(1, t)*(-v_scale+dc))*dt*dt;
+    double sigma2 = gamma(t)*gamma(t)*s*s*dt + gamma(t)*sv*abs(stimulus(0, t)*(v+dc))*dt*dt + gamma(t)*sv*abs(stimulus(1, t)*(-v+dc))*dt*dt;
     for(unsigned int j=1; j<t_mat.n_rows-1; j++){
-      double mu = exp(-lambda*dt)*bin_centers(j-1) + gamma(t)*(((v_scale+dc)*stimulus(0, t) + (-v_scale+dc)*stimulus(1, t)) * dt);
+      double mu = exp(-lambda*dt)*bin_centers(j-1) + gamma(t)*(((v+dc)*stimulus(0, t) + (-v+dc)*stimulus(1, t)) * dt);
       p_breaks = arma::normcdf(bin_breaks, mu, sqrt(sigma2));
       t_mat(0, j) = p_breaks(0);
       t_mat(arma::span(1, t_mat.n_rows-2), j) = arma::diff(p_breaks);
@@ -132,7 +135,12 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
   
   // add t0 to response time distribution
   
-  int t0_bin_min = round((t0-st0/2)/dt), t0_bin_max = round((t0+st0/2)/dt);
+  int t0_bin_min = round((t0-st0/2)/dt);
+  if (t0_bin_min < 0)
+    t0_bin_min = 0;
+  int t0_bin_max = round((t0+st0/2)/dt);
+  if (t0_bin_max < 0)
+    t0_bin_max = 0;
   arma::mat t0_rt = arma::zeros(t0_bin_max+p_rt.n_rows,2);
   for(int i=t0_bin_min; i<=t0_bin_max; i++){
     t0_rt(arma::span(i,i+p_rt.n_rows-1), 0) += p_rt.col(0);
@@ -154,6 +162,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
 //' @param choice int; decision on trial, 0 for lower boundary, 1 for upper
 //' @param rt numeric; response time on trial
 //' @param stimulus matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)
+//' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
 //' @param s numeric; standard deviation in wiener diffusion noise
@@ -180,16 +189,16 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double a, double t0, double s, double
 //' @export
 // [[Rcpp::export]]
 double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
-                       double a, double t0, double s,
-                       double z=0.5, double dc=0,
+                       double v, double a, double t0,
+                       double s=1, double z=0.5, double dc=0,
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
                        double uslope=0, double umag=0, double udelay=0,
                        double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   arma::mat fpt_density = pulse_fp_fpt(stimulus,
-                                       a, t0, s,
-                                       z, dc,
+                                       v, a, t0,
+                                       s, z, dc,
                                        sv, st0, sz,
                                        lambda, aprime, kappa, tc,
                                        uslope, umag, udelay,
@@ -207,6 +216,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @param stimuli array; 2 x timepoints x trials array of pulse stimuli
 //' @param up_sequence vector of strings; string of 0s, and 1s of stimulus values (0 no evidence, 1 to upper). If down_sequence not specified, (0 to lower, 1 to upper).
 //' @param down_sequence vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)
+//' @param v numeric; drift rate, either single value or vector for each trial
 //' @param a numeric; initial boundary, either single value or vector for each trial
 //' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 //' @param t0 numeric; non-decision time, either single value or vector for each trial
@@ -235,8 +245,8 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @export
 // [[Rcpp::export]]
 double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
-                 arma::vec a, arma::vec t0, arma::vec s,
-                 arma::vec z=0, arma::vec dc=0,
+                 arma::vec v, arma::vec a, arma::vec t0,
+                 arma::vec s=0, arma::vec z=0, arma::vec dc=0,
                  arma::vec sv=0, arma::vec st0=0, arma::vec sz=0,
                  arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0,
                  arma::vec uslope=0, arma::vec umag=0, arma::vec udelay=0, bool check_pars=true,
@@ -246,8 +256,11 @@ double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
   
   // check parameter vectors
   if(check_pars){
+    s(arma::find(s==0)).fill(1);
     z(arma::find(z==0)).fill(0.5);
     tc(arma::find(tc==0)).fill(0.25);
+    if(v.n_elem != choices.n_elem)
+      v = arma::zeros(choices.n_elem)+v(0);
     if(a.n_elem != choices.n_elem)
       a = arma::zeros(choices.n_elem)+a(0);
     if(t0.n_elem != choices.n_elem)
@@ -287,8 +300,8 @@ double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
   for(unsigned int i=0; i<choices.n_elem; i++){
     
     double p_local = pulse_trial_lik(choices(i), rt(i), stimuli.slice(i),
-                                     a(i), t0(i), s(i),
-                                     z(i), dc(i),
+                                     v(i), a(i), t0(i),
+                                     s(i), z(i), dc(i),
                                      sv(i), st0(i), sz(i),
                                      lambda(i), aprime(i), kappa(i), tc(i),
                                      uslope(i), umag(i), udelay(i),

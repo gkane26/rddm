@@ -7,9 +7,10 @@
 sim_pulse(
   n,
   stimuli,
+  v,
   a,
   t0,
-  s,
+  s = 1,
   z = 0.5,
   dc = 0,
   sv = 0,
@@ -35,6 +36,8 @@ sim_pulse(
 \item{n}{integer; number of decisions to simulate}
 
 \item{stimuli}{cube; stimuli to simulate, 2 rows X timepoints x trials.}
+
+\item{v}{numeric; drift rate}
 
 \item{a}{numeric; initial boundary}
 

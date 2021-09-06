@@ -2,6 +2,7 @@
 #include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
+#include "fast_rand.h"
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 // [[Rcpp::plugins(openmp)]]
@@ -41,10 +42,19 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
              double aprime=0, double kappa=0, double tc=.25,
              double uslope=0, double umag=0, double udelay=0,
              double s=1, double dt=.001, double max_time=10,
-             int bounds=0, int urgency=0, int n_threads=1, bool return_accu=false){
+             int bounds=0, int urgency=0, int n_threads=1, bool return_accu=false, int seed=-1) {
   
-  omp_set_num_threads(n_threads);
-  int n_on_thread = n / n_threads;
+  if (seed >= 0) {
+    zrandseed(seed);
+  }
+  
+  int thread_leftover = n % n_threads;
+  arma::uvec n_on_thread(n_threads);
+  n_on_thread.fill(n / n_threads);
+  if (thread_leftover > 0) {
+    n_on_thread.rows(0, thread_leftover-1) += 1;
+  }
+  arma::uvec thread_starts = arma::cumsum(n_on_thread);
   
   arma::vec rt_full = arma::zeros(n),
     response_full = arma::zeros(n);
@@ -78,26 +88,29 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
   
   double dW = s*sqrt(dt);
   
-#pragma omp parallel for
+#pragma omp parallel for num_threads(n_threads)
   for (int i=0; i<n_threads; i++){
+    
+    int thread_start = thread_starts(i) - thread_starts(0);
+    int thread_end = thread_start + n_on_thread(i) - 1;
     
     double step = 0,
       t = dt;
     
-    arma::vec v_var = v + sv * arma::randn(n_on_thread) + dc,
-      z_var = z + sz*(arma::randu(n_on_thread)-.5),
+    arma::vec v_var = v + sv * zrandn(n_on_thread(i)) + dc,
+      z_var = z + sz * (arma::randu(n_on_thread(i))-.5),
       x = a/2 * (z_var - 0.5),
-      rt = arma::zeros(n_on_thread);
-    arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread-1, n_on_thread);
+      rt = arma::zeros(n_on_thread(i));
+    arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread(i)-1, n_on_thread(i));
     
-    arma::mat accumulators(n_on_thread, tvec.n_elem+1);
+    arma::mat accumulators(n_on_thread(i), tvec.n_elem+1);
     if (return_accu) {
       accumulators.fill(arma::datum::nan);
       accumulators.col(0) = x;
     }
     
     while((still_drift.n_elem > 0) & (t < max_time)){
-      x(still_drift) +=  gamma(step) * (v_var(still_drift)*dt + dW*arma::randn(still_drift.size()));
+      x(still_drift) +=  gamma(step) * (v_var(still_drift) * dt + dW * zrandn(still_drift.n_elem));
       rt(still_drift) += dt;
       still_drift = arma::find(arma::abs(x) < bound(step));
       t+=dt;
@@ -109,21 +122,28 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
     }
     
     double final_bound = bound(bound.n_elem-1);
-    arma::vec response = -arma::ones(n_on_thread);
+    arma::vec response(n_on_thread(i));
+    response.fill(arma::datum::nan);
     response(arma::find(x >= final_bound)).fill(1);
     response(arma::find(x <= -final_bound)).fill(0);
     
-    rt_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = rt;
-    response_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1)) = response;
+    arma::span thread_span = arma::span(thread_start, thread_end);
+    rt_full(thread_span) = rt;
+    response_full(thread_span) = response;
     
     if (return_accu) {
-      accumulators_full(arma::span(i*n_on_thread, i*n_on_thread+n_on_thread-1), arma::span::all) = accumulators;
+      accumulators_full(thread_span, arma::span::all) = accumulators;
     }
   }
   
-  DataFrame sim = DataFrame::create(Named("response")=response_full, Named("rt")=rt_full+t0+st0*(arma::randu(n)-.5));
+  arma::vec t0_vec = t0 + st0 * (arma::randu(n) - 0.5);
+  t0_vec.clamp(0, arma::datum::inf);
+  
+  DataFrame sim = DataFrame::create(Named("response")=response_full,
+                                    Named("rt")=rt_full + t0_vec);
+  
   if (return_accu) {
-    return List::create(Named("behavior") = sim, Named("accumulators") = accumulators_full);
+    return List::create(Named("behavior") = sim,Named("accumulators") = accumulators_full);
   } else {
     return List::create(Named("behavior") = sim);
   }

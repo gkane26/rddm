@@ -8,9 +8,10 @@ pulse_nll(
   choices,
   rt,
   stimuli,
+  v,
   a,
   t0,
-  s,
+  s = 0L,
   z = 0L,
   dc = 0L,
   sv = 0L,
@@ -36,6 +37,8 @@ pulse_nll(
 \item{rt}{numeric; vector of response times}
 
 \item{stimuli}{array; 2 x timepoints x trials array of pulse stimuli}
+
+\item{v}{numeric; drift rate, either single value or vector for each trial}
 
 \item{a}{numeric; initial boundary, either single value or vector for each trial}
 
