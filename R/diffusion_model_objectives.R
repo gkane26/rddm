@@ -1,17 +1,30 @@
 #' @noRd
 #' @importFrom foreach %dopar%
-ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_lik=F){
+ddm_rtdists_nll = function(pars,
+                           dat=NULL,
+                           min_p=1e-10,
+                           transform_pars=F,
+                           check_constraints=F,
+                           debug=F){
   
-  if(is.null(dat)) dat = self$data
+  ### check constraints
   
-  #check params
-  if(transform_pars){
-    pars = private$logistic(pars)
+  checks = private$objective_checks(pars,
+                                    transform_pars=transform_pars,
+                                    check_constraints=check_constraints,
+                                    debug=debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
+  
+  if (!is.na(pass) & !pass) {
+    nll = 1e10
+    if(debug) cat(nll, "\n")
+    return(nll)
   }
   
-  private$set_params(pars)
-  
-  if (!private$check_par_constraints()) return(1e10)
+  if(is.null(dat)) {
+    dat = self$data
+  }
   
   this_par_matrix = copy(private$par_matrix)
   if ("z" %in% names(this_par_matrix)){
@@ -24,6 +37,7 @@ ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_
   }
   
   # loop through conditions to get likelihood
+  
   p_response = c()
   if (this_par_matrix[, .N] < dat[, .N]) {
     nll = 0
@@ -42,28 +56,42 @@ ddm_rtdists_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_
   p_response[p_response < min_p] = min_p
   nll = -sum(log(p_response))
   
-  if(is.infinite(nll)) browser()
-  if(is.na(nll)) browser()
-  if(debug_lik) cat(nll, "\n")
-  return(nll)
+  if(is.na(nll)) nll = 1e10
+  if(debug) cat(nll, "\n")
+  nll
+  
 }
 
 #' @noRd
 #' @importFrom foreach %dopar%
-ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug_lik=F, ...){
+ddm_integral_nll = function(pars,
+                            dat=NULL,
+                            min_p=1e-10,
+                            transform_pars=F,
+                            check_constraints=F,
+                            debug=F,
+                            ...){
+  
+  
+  ### check constraints
+  
+  checks = private$objective_checks(pars,
+                                    transform_pars=transform_pars,
+                                    check_constraints=check_constraints,
+                                    debug=debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
+  
+  if (!is.na(pass) & !pass) {
+    nll = 1e10
+    if(debug) cat(nll, "\n")
+    return(nll)
+  }
   
   if(is.null(dat)) dat = self$data
   
-  #check params
-  if(transform_pars){
-    pars = private$logistic(pars)
-  }
-  
-  private$set_params(pars)
-  
-  if (!private$check_par_constraints()) return(1e10)
-  
   ### get list of rt densities
+  
   pars_only_mat = copy(private$par_matrix)
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
   
@@ -79,16 +107,21 @@ ddm_integral_nll = function(pars, dat=NULL, min_p=1e-10, transform_pars=F, debug
     c(list(density=this_density), unlist(par_matrix[i, sim_cond, with=F]))
   }
   
-  # get likelihood for each rt
+  ### get likelihood for each rt
+  
   nll_dat = get_rt_liks(copy(dat), density_list, min_p=min_p)
   
-  # get negative log likelihood
-  nll = -sum(log(nll_dat[,p_rt]))
-  if(is.infinite(nll)) browser()
-  if(is.na(nll)) browser()
-  if(debug_lik) cat(nll, "\n")
-  return(nll)
+  ### get negative log likelihood
+  
+  nll_dat[p_rt < min_p, p_rt := min_p]
+  nll = -sum(log(nll_dat[, p_rt]))
+  
+  if(is.na(nll)) nll = 1e10
+  if(debug) cat(nll, "\n")
+  nll
+  
 }
+
 
 #' @noRd
 #' @importFrom foreach %dopar%
@@ -96,22 +129,22 @@ ddm_sim_x2 = function(pars,
                       data_q=NULL,
                       n_sim=10000,
                       transform_pars=F,
-                      check_constraints=T,
+                      check_constraints=F,
                       debug=F,
                       ...){
   
   ### check constraints
   
   checks = private$objective_checks(pars,
-                                    transform_pars,
-                                    check_constraints,
-                                    debug)
+                                    transform_pars=transform_pars,
+                                    check_constraints=check_constraints,
+                                    debug=debug)
   pars = checks[[1]]
   pass = checks[[2]]
   
   if (!is.na(pass) & !pass) {
-    nll = 1e10
-    if(debug) cat("nll =", nll, "\n")
+    chisq = 1e10
+    if(debug) cat(chisq, "\n")
     return(nll)
   }
   
