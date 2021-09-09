@@ -38,6 +38,9 @@ ddm_rtdists_nll = function(pars,
   
   # loop through conditions to get likelihood
   
+  legal_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "s")
+  fixed = private$fixed[names(private$fixed) %in% legal_pars]
+  
   p_response = c()
   if (this_par_matrix[, .N] < dat[, .N]) {
     nll = 0
@@ -46,11 +49,11 @@ ddm_rtdists_nll = function(pars,
       for(j in 1:length(private$sim_cond)){
         sub_dat = sub_dat[get(private$sim_cond[j]) == this_par_matrix[i, get(private$sim_cond[j])]]
       }
-      sub_p = do.call(rtdists::ddiffusion, c(list(rt=sub_dat[,rt]), list(response=ifelse(sub_dat[,response]==0, "lower", "upper")), as.list(this_par_matrix[i,(1+length(private$sim_cond)):length(this_par_matrix)])))
+      sub_p = do.call(rtdists::ddiffusion, c(list(rt=sub_dat[,rt]), list(response=ifelse(sub_dat[,response]==0, "lower", "upper")), as.list(this_par_matrix[i,(1+length(private$sim_cond)):length(this_par_matrix)]), fixed))
       p_response = c(p_response, sub_p)
     }
   } else {
-    p_response = do.call(rtdists::ddiffusion, c(list(rt=dat[, rt]), list(response=dat[, ifelse(response == 0, "lower", "upper")]), as.list(this_par_matrix[, (1+length(private$sim_cond)):length(this_par_matrix)])))
+    p_response = do.call(rtdists::ddiffusion, c(list(rt=dat[, rt]), list(response=dat[, ifelse(response == 0, "lower", "upper")]), as.list(this_par_matrix[, (1+length(private$sim_cond)):length(this_par_matrix)]), fixed))
   }
   
   p_response[p_response < min_p] = min_p
@@ -168,6 +171,7 @@ ddm_sim_x2 = function(pars,
       par_list = as.list(pars_only_mat[i])
       this_sim = setDT(do.call(sim_ddm, c(n=n_sim,
                                           par_list,
+                                          private$fixed,
                                           bounds=private$bounds,
                                           urgency=private$urgency,
                                           max_time=private$max_time,
@@ -194,6 +198,7 @@ ddm_sim_x2 = function(pars,
     this_sim = data.table()
     for (i in 1:n_sim) {
       sub_sim = setDT(do.call(sim_ddm_vec, c(par_list,
+                                             private$fixed,
                                              bounds=private$bounds,
                                              urgency=private$urgency,
                                              max_time=private$max_time,
