@@ -268,22 +268,47 @@ simulate_diffusion_model = function(n=10000, pars=NULL, ...) {
   
   all_sim = data.table()
   
-  for (i in 1:private$par_transform[, .N]) {
+  if (private$par_transform[, .N] < self$data[, .N]) {
+    
+    
+    for (i in 1:private$par_transform[, .N]) {
+      
+      # get conditions
+      this_sim = private$par_transform[i, 1:length(private$sim_cond)]
+      
+      # simulate trials
+      par_list = as.list(pars_only_mat[i])
+      this_sim = data.table(this_sim,
+                            do.call(sim_ddm, c(n=n,
+                                               par_list,
+                                               private$fixed,
+                                               bounds=private$bounds,
+                                               urgency=private$urgency,
+                                               max_time=private$max_time,
+                                               ...))$behavior)
+      
+      all_sim = rbind(all_sim, this_sim)
+      
+    }
+    
+  } else {
     
     # get conditions
     this_sim = private$par_transform[i, 1:length(private$sim_cond)]
     
-    # simulate trials
-    par_list = as.list(pars_only_mat[i])
-    this_sim = data.table(this_sim,
-                          do.call(sim_ddm, c(n=n,
-                                             par_list,
+    par_list = as.list(pars_only_mat)
+    for (i in 1:n_sim) {
+      
+      this_sim = setDT(do.call(sim_ddm_vec, c(par_list,
+                                             private$fixed,
                                              bounds=private$bounds,
                                              urgency=private$urgency,
                                              max_time=private$max_time,
                                              ...))$behavior)
-    
-    all_sim = rbind(all_sim, this_sim)
+      this_sim[, correctSide := private$par_transform[, correctSide]]
+      all_sim = rbind(all_sim, this_sim)
+      
+    }
     
   }
   

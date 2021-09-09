@@ -100,7 +100,9 @@ ddm_integral_nll = function(pars,
   
   if (!foreach::getDoParRegistered()) foreach::registerDoSEQ()
   
-  fixed = private$fixed
+  legal_pars = c("v", "a", "t0", "z", "dc", "sv", "sz", "st0", "aprime", "kappa", "tc", "s")
+  fixed = private$fixed[names(private$fixed) %in% legal_pars]
+  
   max_time = private$max_time
   bounds=private$bounds
   par_matrix = private$par_matrix
