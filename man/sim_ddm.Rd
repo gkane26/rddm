@@ -74,6 +74,8 @@ sim_ddm(
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
 
 \item{return_accu}{bool; if True, return full trajectory of accumulators}
+
+\item{seed}{integer; set random seed}
 }
 \value{
 data frame with two columns: response (1 for upper boundary, 0 for lower), and response time

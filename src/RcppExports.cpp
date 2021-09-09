@@ -331,8 +331,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sim_ddm_vec
-DataFrame sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec aprime, arma::vec kappa, arma::vec tc, double s, double dt, double max_time, int bounds, bool check_pars, int n_threads);
-RcppExport SEXP _rddm_sim_ddm_vec(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP boundsSEXP, SEXP check_parsSEXP, SEXP n_threadsSEXP) {
+List sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0, arma::vec z, arma::vec dc, arma::vec sv, arma::vec st0, arma::vec sz, arma::vec aprime, arma::vec kappa, arma::vec tc, arma::vec uslope, arma::vec udelay, arma::vec umag, arma::vec s, double dt, double max_time, int bounds, int urgency, bool check_pars, int n_threads, bool return_accu, int seed);
+RcppExport SEXP _rddm_sim_ddm_vec(SEXP vSEXP, SEXP aSEXP, SEXP t0SEXP, SEXP zSEXP, SEXP dcSEXP, SEXP svSEXP, SEXP st0SEXP, SEXP szSEXP, SEXP aprimeSEXP, SEXP kappaSEXP, SEXP tcSEXP, SEXP uslopeSEXP, SEXP udelaySEXP, SEXP umagSEXP, SEXP sSEXP, SEXP dtSEXP, SEXP max_timeSEXP, SEXP boundsSEXP, SEXP urgencySEXP, SEXP check_parsSEXP, SEXP n_threadsSEXP, SEXP return_accuSEXP, SEXP seedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -347,13 +347,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type aprime(aprimeSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type kappa(kappaSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type tc(tcSEXP);
-    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type uslope(uslopeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type udelay(udelaySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type umag(umagSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type s(sSEXP);
     Rcpp::traits::input_parameter< double >::type dt(dtSEXP);
     Rcpp::traits::input_parameter< double >::type max_time(max_timeSEXP);
     Rcpp::traits::input_parameter< int >::type bounds(boundsSEXP);
+    Rcpp::traits::input_parameter< int >::type urgency(urgencySEXP);
     Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
     Rcpp::traits::input_parameter< int >::type n_threads(n_threadsSEXP);
-    rcpp_result_gen = Rcpp::wrap(sim_ddm_vec(v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, check_pars, n_threads));
+    Rcpp::traits::input_parameter< bool >::type return_accu(return_accuSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_ddm_vec(v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, uslope, udelay, umag, s, dt, max_time, bounds, urgency, check_pars, n_threads, return_accu, seed));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -445,6 +451,21 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// linear_urgency_vec
+arma::mat linear_urgency_vec(arma::vec t, arma::vec uslope, arma::vec udelay, arma::vec umag, bool check_pars);
+RcppExport SEXP _rddm_linear_urgency_vec(SEXP tSEXP, SEXP uslopeSEXP, SEXP udelaySEXP, SEXP umagSEXP, SEXP check_parsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type t(tSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type uslope(uslopeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type udelay(udelaySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type umag(umagSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
+    rcpp_result_gen = Rcpp::wrap(linear_urgency_vec(t, uslope, udelay, umag, check_pars));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logistic_urgency
 arma::vec logistic_urgency(arma::vec t, double uslope, double udelay, double umag);
 RcppExport SEXP _rddm_logistic_urgency(SEXP tSEXP, SEXP uslopeSEXP, SEXP udelaySEXP, SEXP umagSEXP) {
@@ -456,6 +477,21 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type udelay(udelaySEXP);
     Rcpp::traits::input_parameter< double >::type umag(umagSEXP);
     rcpp_result_gen = Rcpp::wrap(logistic_urgency(t, uslope, udelay, umag));
+    return rcpp_result_gen;
+END_RCPP
+}
+// logistic_urgency_vec
+arma::mat logistic_urgency_vec(arma::vec t, arma::vec uslope, arma::vec udelay, arma::vec umag, bool check_pars);
+RcppExport SEXP _rddm_logistic_urgency_vec(SEXP tSEXP, SEXP uslopeSEXP, SEXP udelaySEXP, SEXP umagSEXP, SEXP check_parsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type t(tSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type uslope(uslopeSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type udelay(udelaySEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type umag(umagSEXP);
+    Rcpp::traits::input_parameter< bool >::type check_pars(check_parsSEXP);
+    rcpp_result_gen = Rcpp::wrap(logistic_urgency_vec(t, uslope, udelay, umag, check_pars));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -476,11 +512,13 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rddm_pulse_predict", (DL_FUNC) &_rddm_pulse_predict, 20},
     {"_rddm_pulse_trial_stimulus", (DL_FUNC) &_rddm_pulse_trial_stimulus, 5},
     {"_rddm_sim_ddm", (DL_FUNC) &_rddm_sim_ddm, 23},
-    {"_rddm_sim_ddm_vec", (DL_FUNC) &_rddm_sim_ddm_vec, 17},
+    {"_rddm_sim_ddm_vec", (DL_FUNC) &_rddm_sim_ddm_vec, 23},
     {"_rddm_sim_evacc", (DL_FUNC) &_rddm_sim_evacc, 29},
     {"_rddm_sim_pulse", (DL_FUNC) &_rddm_sim_pulse, 25},
     {"_rddm_linear_urgency", (DL_FUNC) &_rddm_linear_urgency, 4},
+    {"_rddm_linear_urgency_vec", (DL_FUNC) &_rddm_linear_urgency_vec, 5},
     {"_rddm_logistic_urgency", (DL_FUNC) &_rddm_logistic_urgency, 4},
+    {"_rddm_logistic_urgency_vec", (DL_FUNC) &_rddm_logistic_urgency_vec, 5},
     {NULL, NULL, 0}
 };
 

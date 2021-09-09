@@ -9,9 +9,7 @@ model$simulate(n, par_values, par_names=NULL, ...)
 \arguments{
 \item{n}{integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition}
 
-\item{par_values}{numeric vector; vector of parameters. Must be named vector or used with par_names}
-
-\item{par_names}{character vector; vector of parameter names}
+\item{pars}{numeric vector; vector of parameters}
 
 \item{...}{additional arguments passed to \code{sim_ddm}}
 }

@@ -104,8 +104,8 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
 #pragma omp parallel for num_threads(n_threads)
   for (int i=0; i<n_threads; i++){
     
-    int thread_start = thread_starts(i) - thread_starts(0);
-    int thread_end = thread_start + n_on_thread(i) - 1;
+    int thread_start = thread_starts(i) - n_on_thread(i);
+    int thread_end = thread_starts(i) - 1;
 
     arma::uvec thread_trials = trial_vector.rows(thread_start, thread_end);
 

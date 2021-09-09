@@ -13,6 +13,8 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions=NUL
   dat = setDT(dat)
   p_q = diff(c(0, qs, 1))
   
+  if (is.null(conditions)) conditions = ""
+  
   rt_qs = dat[, data.table(response = c(0, 1, NA),
                            n_response = c(sum((response == 0) & !(is.na(response))),
                                           sum((response == 1) & !(is.na(response))),
@@ -23,11 +25,7 @@ get_rt_quantiles = function(dat, qs=seq(.1, .9, .2), rt_var="rt", conditions=NUL
                                  rep(NA, length(qs)))),
               by=c(conditions)]
   
-  if (is.null(conditions)) {
-    rt_qs[, p_response := n_response / sum(n_response)]
-  } else {
-    rt_qs[, p_response := n_response / sum(n_response), by=c(conditions)]
-  }
+  rt_qs[, p_response := n_response / sum(n_response), by=c(conditions)]
   
   list(rt_qs, p_q)
   

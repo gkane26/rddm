@@ -280,6 +280,7 @@ pulse_trial_stimulus <- function(stim_seq, dur = 0.01, isi = 0.1, pre_stim = 0, 
 #' @param urgency int: 0 for none, 1 for linear, 2 for logistic
 #' @param n_threads integer; number of threads to run in parallel, default = 1
 #' @param return_accu bool; if True, return full trajectory of accumulators
+#' @param seed integer; set random seed
 #'
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #' 
@@ -301,18 +302,24 @@ sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime
 #' @param aprime vector; degree of collapse, default = 0
 #' @param kappa vector; slope of collapse, default = 0
 #' @param tc vector; time constant of collapse, default = .25
+#' @param uslope numeric; urgency scaling factor, default = 0;
+#' @param umag numeric; urgency magnitude, default = 0;
+#' @param udelay numeric; urgency delay, default = 0;
 #' @param s numeric; standard deviation in wiener diffusion noise, default = 1
 #' @param dt numeric; time step of simulation, default = .001
 #' @param max_time numeric; max time of simulation, default = 10
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds
+#' @param urgency int: 0 for none, 1 for linear, 2 for logistic
 #' @param check_pars bool; if True (default) check parameter vector lengths and default values
 #' @param n_threads integer; number of threads to run in parallel, default = 1
+#' @param return_accu bool; if True, return full trajectory of accumulators
+#' @param seed integer; set random seed
 #'
 #' @return data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 #'
 #' @export
-sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, aprime = 0L, kappa = 0L, tc = 0L, s = 1, dt = .001, max_time = 10, bounds = 0L, check_pars = TRUE, n_threads = 1L) {
-    .Call('_rddm_sim_ddm_vec', PACKAGE = 'rddm', v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, s, dt, max_time, bounds, check_pars, n_threads)
+sim_ddm_vec <- function(v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, udelay = 0L, umag = 0L, s = 0L, dt = .001, max_time = 10, bounds = 0L, urgency = 0L, check_pars = TRUE, n_threads = 1L, return_accu = FALSE, seed = -1L) {
+    .Call('_rddm_sim_ddm_vec', PACKAGE = 'rddm', v, a, t0, z, dc, sv, st0, sz, aprime, kappa, tc, uslope, udelay, umag, s, dt, max_time, bounds, urgency, check_pars, n_threads, return_accu, seed)
 }
 
 #' Simulate EvAcc (2-accumulator) model with fixed or collapsing boundary
@@ -411,7 +418,19 @@ linear_urgency <- function(t, uslope = 0, udelay = 0, umag = 0) {
 
 #' @rdname urgency
 #' @export
+linear_urgency_vec <- function(t, uslope = 0L, udelay = 0L, umag = 0L, check_pars = TRUE) {
+    .Call('_rddm_linear_urgency_vec', PACKAGE = 'rddm', t, uslope, udelay, umag, check_pars)
+}
+
+#' @rdname urgency
+#' @export
 logistic_urgency <- function(t, uslope = 0, udelay = 0, umag = 0) {
     .Call('_rddm_logistic_urgency', PACKAGE = 'rddm', t, uslope, udelay, umag)
+}
+
+#' @rdname urgency
+#' @export
+logistic_urgency_vec <- function(t, uslope = 0L, udelay = 0L, umag = 0L, check_pars = TRUE) {
+    .Call('_rddm_logistic_urgency_vec', PACKAGE = 'rddm', t, uslope, udelay, umag, check_pars)
 }
 

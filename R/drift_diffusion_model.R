@@ -174,9 +174,9 @@ predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
       
       if (method == "rtdists") {
         this_sim = setDT(do.call(rtdists::rdiffusion, c(list(n=n),
-                                                         as.list(pars_only_mat[i]),
-                                                         as.list(private$fixed),
-                                                         maxt=private$max_time)))
+                                                        as.list(pars_only_mat[i]),
+                                                        as.list(private$fixed),
+                                                        maxt=private$max_time)))
         this_sim[, response := ifelse(response == "upper", 1, 0)]
         this_sim[, rt := round(rt, 3)]
         setcolorder(this_sim, c("response", "rt"))
@@ -244,34 +244,50 @@ predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
 #' @usage model$simulate(n, par_values, par_names=NULL, ...)
 #'
 #' @param n integer; number of decisions to simulate for each condition. If the number of conditions is equal to the length of the data, e.g. if using as_function with a continuous predictor, ignores \code{n} and simulates one decision per condition
-#' @param par_values numeric vector; vector of parameters. Must be named vector or used with par_names
-#' @param par_names character vector; vector of parameter names
+#' @param pars numeric vector; vector of parameters
 #' @param ... additional arguments passed to \code{sim_ddm}
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
 #' 
 #' @keywords internal
 #' 
-simulate_diffusion_model = function(n, par_values, par_names=NULL, ...) {
-
-  if (missing(par_values)) {
-    stop("No parameters! Must supply parameter vector \"par_values\" as a named vector, 
-         or along with a separate vector \"par_names\" with names of paramters.")
-  }
+simulate_diffusion_model = function(n=10000, pars=NULL, ...) {
   
-  if (is.null(names(par_values))) {
-    if (is.null(par_names)) {
-      stop("No parameter names supplied. \"par_values\" must be a named vector, 
-           or the parameter \"par_names\" must be supplied.")
+  if(is.null(pars)) {
+    if (is.null(self$par_values)) {
+      pars = self$start_values
     } else {
-      if (length(par_names) != length(par_values)) {
-        stop("\"par_names\" must be the same length as \"par_values\".")
-      }
-      names(par_values) = par_names
+      pars = self$par_values
     }
   }
   
-  do.call(sim_ddm, c(n=n, as.list(par_values), ...))
+  private$set_params(pars)
+  
+  pars_only_mat = copy(private$par_matrix)
+  pars_only_mat = pars_only_mat[, -(1:(length(private$sim_cond)))]
+  
+  all_sim = data.table()
+  
+  for (i in 1:private$par_transform[, .N]) {
+    
+    # get conditions
+    this_sim = private$par_transform[i, 1:length(private$sim_cond)]
+    
+    # simulate trials
+    par_list = as.list(pars_only_mat[i])
+    this_sim = data.table(this_sim,
+                          do.call(sim_ddm, c(n=n,
+                                             par_list,
+                                             bounds=private$bounds,
+                                             urgency=private$urgency,
+                                             max_time=private$max_time,
+                                             ...))$behavior)
+    
+    all_sim = rbind(all_sim, this_sim)
+    
+  }
+  
+  all_sim
   
 }
 

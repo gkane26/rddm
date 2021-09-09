@@ -212,12 +212,15 @@ init_model = function(dat,
   setorderv(self$data, sort_var)
   simulate_conditions = c("correctSide", unique(c(depends_on, extra_condition, as_function_vars)))
   # self$data = self$data[rt < max_time]
-  q_list = get_rt_quantiles(self$data, conditions = simulate_conditions, ...)
-  self$data_q = q_list[[1]]
-  private$p_q = q_list[[2]]
   private$as_function = lapply(as_function, function(x) ifelse(class(x) == "function", x, x[[1]]))
   par_transform = unique(self$data[, ..simulate_conditions])
-  
+  if (par_transform[, .N] == self$data[, .N]) {
+    q_list = get_rt_quantiles(self$data, conditions = "correctSide", ...)
+  } else {
+    q_list = get_rt_quantiles(self$data, conditions = simulate_conditions, ...)
+  }
+  self$data_q = q_list[[1]]
+  private$p_q = q_list[[2]]
   
   ### set default parameter values
   

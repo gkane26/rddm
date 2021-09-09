@@ -160,29 +160,61 @@ ddm_sim_x2 = function(pars,
   
   chisq = 0
   
-  for (i in 1:private$par_transform[, .N]) {
+  if (private$par_transform[, .N] < self$data[, .N]) {
     
-    # simulate trials
-    par_list = as.list(pars_only_mat[i])
-    this_sim = setDT(do.call(sim_ddm, c(n=n_sim,
+    for (i in 1:private$par_transform[, .N]) {
+      
+      # simulate trials
+      par_list = as.list(pars_only_mat[i])
+      this_sim = setDT(do.call(sim_ddm, c(n=n_sim,
                                           par_list,
                                           bounds=private$bounds,
                                           urgency=private$urgency,
                                           max_time=private$max_time,
                                           ...))$behavior)
-    
-    # get rt quantile matrix
-    sub_q = copy(data_q)
-    for(j in 1:length(private$sim_cond)) {
-      sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+      
+      # get rt quantile matrix
+      sub_q = copy(data_q)
+      for(j in 1:length(private$sim_cond)) {
+        sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+      }
+      rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+      n_rt = sub_q[, n_response, .(response)][, n_response]
+      sim_rts = list(this_sim[response == 0, rt],
+                     this_sim[response == 1, rt],
+                     this_sim[is.na(response), rt])
+      
+      chisq = chisq + quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
+      
     }
-    rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
-    n_rt = sub_q[, n_response, .(response)][, n_response]
-    sim_rts = list(this_sim[response == 0, rt],
-                   this_sim[response == 1, rt],
-                   this_sim[is.na(response), rt])
     
-    chisq = chisq + quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
+  } else {
+    
+    par_list = as.list(pars_only_mat)
+    this_sim = data.table()
+    for (i in 1:n_sim) {
+      sub_sim = setDT(do.call(sim_ddm_vec, c(par_list,
+                                             bounds=private$bounds,
+                                             urgency=private$urgency,
+                                             max_time=private$max_time,
+                                             ...))$behavior)
+      sub_sim[, correctSide := private$par_transform[, correctSide]]
+      this_sim = rbind(this_sim, sub_sim)
+    }
+    
+    for (c in unique(data_q[, correctSide])) {
+      
+      sub_q = data_q[correctSide == c]
+      sub_sim = this_sim[correctSide == c]
+      rt_q_mat = as.matrix(data_q[, rt_q_cols, .(response), with=F])
+      n_rt = data_q[, n_response, .(response)][, n_response]
+      sim_rts = list(sub_sim[response == 0, rt],
+                     sub_sim[response == 1, rt],
+                     sub_sim[is.na(response), rt])
+      
+      chisq = chisq + quantile_chisquare(sim_rts, rt_q_mat, private$p_q, n_rt)
+      
+    }
     
   }
   

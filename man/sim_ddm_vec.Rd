@@ -16,12 +16,18 @@ sim_ddm_vec(
   aprime = 0L,
   kappa = 0L,
   tc = 0L,
-  s = 1,
+  uslope = 0L,
+  udelay = 0L,
+  umag = 0L,
+  s = 0L,
   dt = 0.001,
   max_time = 10,
   bounds = 0L,
+  urgency = 0L,
   check_pars = TRUE,
-  n_threads = 1L
+  n_threads = 1L,
+  return_accu = FALSE,
+  seed = -1L
 )
 }
 \arguments{
@@ -47,6 +53,12 @@ sim_ddm_vec(
 
 \item{tc}{vector; time constant of collapse, default = .25}
 
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
 \item{s}{numeric; standard deviation in wiener diffusion noise, default = 1}
 
 \item{dt}{numeric; time step of simulation, default = .001}
@@ -55,9 +67,15 @@ sim_ddm_vec(
 
 \item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
 
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
+
 \item{check_pars}{bool; if True (default) check parameter vector lengths and default values}
 
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
+
+\item{return_accu}{bool; if True, return full trajectory of accumulators}
+
+\item{seed}{integer; set random seed}
 }
 \value{
 data frame with two columns: response (1 for upper boundary, 0 for lower), and response time

@@ -3,12 +3,18 @@
 \name{urgency}
 \alias{urgency}
 \alias{linear_urgency}
+\alias{linear_urgency_vec}
 \alias{logistic_urgency}
+\alias{logistic_urgency_vec}
 \title{Urgency functions}
 \usage{
 linear_urgency(t, uslope = 0, udelay = 0, umag = 0)
 
+linear_urgency_vec(t, uslope = 0L, udelay = 0L, umag = 0L, check_pars = TRUE)
+
 logistic_urgency(t, uslope = 0, udelay = 0, umag = 0)
+
+logistic_urgency_vec(t, uslope = 0L, udelay = 0L, umag = 0L, check_pars = TRUE)
 }
 \arguments{
 \item{t}{vector; time points to evaluate boundary}
