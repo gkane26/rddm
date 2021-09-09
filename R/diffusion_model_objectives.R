@@ -206,7 +206,7 @@ ddm_sim_x2 = function(pars,
       
       sub_q = data_q[correctSide == c]
       sub_sim = this_sim[correctSide == c]
-      rt_q_mat = as.matrix(data_q[, rt_q_cols, .(response), with=F])
+      rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
       n_rt = data_q[, n_response, .(response)][, n_response]
       sim_rts = list(sub_sim[response == 0, rt],
                      sub_sim[response == 1, rt],
