@@ -205,6 +205,7 @@ List sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0,
                        aprime.n_elem, kappa.n_elem, tc.n_elem,
                        uslope.n_elem, udelay.n_elem, umag.n_elem,
                        s.n_elem};
+    
     if (v.n_elem < lens.max()) {
       v = arma::zeros(lens.max()) + v(0);
     }

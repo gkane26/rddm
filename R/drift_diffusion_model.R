@@ -151,7 +151,10 @@ init_diffusion_model = function(dat,
 #' 
 #' @keywords internal
 #' 
-predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
+predict_diffusion_model = function(pars=NULL,
+                                   n=NULL,
+                                   method="rtdists",
+                                   ...){
   
   if(is.null(pars)) pars = self$par_values
   private$set_params(pars)
@@ -159,9 +162,29 @@ predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
   pars_only_mat = copy(private$par_matrix)
   pars_only_mat = pars_only_mat[, (1:(length(private$sim_cond))) := NULL]
   
-  if (method == "rtdists" & private$bounds > 0) {
-    warning("can't use rtdists method with collapsing bound. Using integral method instead.")
-    method = "integral"
+  if (method == "rtdists") {
+    
+    if (private$bounds > 0) {
+      warning("can't use rtdists method with collapsing bound. Using integral method instead.")
+      method = "integral"
+    }
+    
+    legal_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "s")
+    fixed = private$fixed[names(private$fixed) %in% legal_pars]
+    
+    if ("z" %in% names(pars_only_mat)){
+      pars_only_mat[, z := z*a]
+    }
+    
+    if("dc" %in% names(pars_only_mat)){
+      pars_only_mat[, v := v + dc]
+      pars_only_mat[, dc := NULL]
+    }
+    
+  } else {
+    
+    fixed = private$fixed
+    
   }
   
   all_sim = data.table()
@@ -173,33 +196,38 @@ predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
       if (is.null(n)) n = 10000
       
       if (method == "rtdists") {
+        
         this_sim = setDT(do.call(rtdists::rdiffusion, c(list(n=n),
                                                         as.list(pars_only_mat[i]),
-                                                        as.list(private$fixed),
+                                                        fixed,
                                                         maxt=private$max_time)))
         this_sim[, response := ifelse(response == "upper", 1, 0)]
         this_sim[, rt := round(rt, 3)]
         setcolorder(this_sim, c("response", "rt"))
-      }
-      
-      if (method == "euler") {
+        
+      } else if (method == "euler") {
+        
         this_sim = do.call(sim_ddm, c(list(n=n),
                                       as.list(pars_only_mat[i]),
-                                      as.list(private$fixed),
+                                      fixed,
                                       max_time=private$max_time,
                                       bounds=private$bounds,
+                                      urgency=private$urgency,
                                       ...))$behavior
+        
       } else if (method == "integral") {
         
         this_fpt = do.call(ddm_integral_fpt, c(as.list(pars_only_mat[i]),
-                                               as.list(private$fixed),
+                                               fixed,
                                                max_time=private$max_time,
                                                bounds=private$bounds,
                                                ...))
         this_sim = fpt_to_sim(this_fpt, n=n)
         
       } else {
+        
         stop("method not supported!")
+        
       }
       
       all_sim = rbind(all_sim, data.table(private$par_matrix[i, 1:length(private$sim_cond)], this_sim))
@@ -214,14 +242,30 @@ predict_diffusion_model = function(pars=NULL, n=NULL, method="rtdists", ...){
     
     for (i in 1:n) {
       
-      if (method == "euler") {
+      if (method == "rtdists") {
+        
+        this_sim = setDT(do.call(rtdists::rdiffusion, c(list(n=pars_only_mat[, .N]),
+                                                        as.list(pars_only_mat),
+                                                        fixed,
+                                                        maxt=private$max_time)))
+        this_sim[, response := ifelse(response == "upper", 1, 0)]
+        this_sim[, rt := round(rt, 3)]
+        setcolorder(this_sim, c("response", "rt"))
+        
+        
+      } else if (method == "euler") {
+        
         this_sim = do.call(sim_ddm_vec, c(as.list(pars_only_mat),
-                                          as.list(private$fixed),
+                                          fixed,
                                           max_time=private$max_time,
                                           bounds=private$bounds,
-                                          ...))
+                                          urgency=private$urgency,
+                                          ...))$behavior
+        
       } else {
+        
         stop("method not supported!")
+        
       }
       
       all_sim = rbind(all_sim, cbind(private$par_matrix[, 1:length(private$sim_cond)], this_sim))

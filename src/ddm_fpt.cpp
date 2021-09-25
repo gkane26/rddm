@@ -103,12 +103,14 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
   
   arma::vec tvec = arma::regspace(dt, dt, max_time+dt);
   arma::vec bound;
-  if(bounds == 2){
-    bound = weibull_bound(tvec, a, aprime, kappa, tc);
-  }else if(bounds == 1){
+  if (bounds == 1) {
     bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+  } else if (bounds == 2) {
+    bound = weibull_bound(tvec, a, aprime, kappa, tc);
+  } else if (bounds == 3) {
+    bound = linear_bound(tvec, a, kappa, tc);
   } else {
-    bound = rep(a/2, tvec.n_elem); 
+    bound = rep(a/2, tvec.n_elem);
   }
   
   arma::mat density_shared = arma::zeros(nBins, 2);
