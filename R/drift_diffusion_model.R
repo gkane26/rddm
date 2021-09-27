@@ -3,8 +3,11 @@
 
 check_ddm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
-  checks = sum(private$par_matrix[, a <= 0]) # a
-  checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
+  checks = 0
+  if ("a" %in% par_matrix_names)
+    checks = sum(private$par_matrix[, a <= 0]) # a
+  if ("t0" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
   if ("sz" %in% par_matrix_names)
@@ -54,6 +57,8 @@ set_ddm_objective <- function(objective=NULL) {
     self$obj = private$integral_obj
   } else if (objective == "chisq") {
     self$obj = private$chisq_obj
+  } else if (objective == "qmpe") {
+    self$obj = private$qmpe_obj
   } else {
     if (("uslope" %in% self$par_names) | ("udelay" %in% self$par_names) | ("umag" %in% self$par_names)) {
       message("specified objective not supported, using chisq method with urgency signal.")
@@ -423,6 +428,7 @@ diffusion_model = R6::R6Class("diffusion_model",
                                 check_par_constraints=check_ddm_constraints,
                                 rtdists_obj = ddm_rtdists_nll,
                                 integral_obj = ddm_integral_nll,
-                                chisq_obj = ddm_sim_x2
+                                chisq_obj = ddm_sim_x2,
+                                qmpe_obj = ddm_sim_qmpe
                               ),
                               lock_objects = FALSE)
