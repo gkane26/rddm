@@ -5,17 +5,17 @@ check_ddm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
   checks = 0
   if ("a" %in% par_matrix_names)
-    checks = sum(private$par_matrix[, a <= 0]) # a
+    checks = checks + sum(private$par_matrix[, a <= 0]) # a
   if ("t0" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (z <= 0) & (z >= 1)]) # z
+    checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
   if ("sz" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sz < 0) & (sz >= z)]) # sz
+    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (st0 < 0) & (st0 >= t0)]) # st0
+    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
   if ("aprime"  %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (aprime < 0) & (aprime > 1)]) # aprime
+    checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, kappa < 0]) # kappa
   if ("tc" %in% par_matrix_names)

@@ -155,7 +155,7 @@ ddm_sim_x2 = function(pars,
   if (!is.na(pass) & !pass) {
     chisq = 1e10
     if(debug) cat(chisq, "\n")
-    return(nll)
+    return(chisq)
   }
   
   if (is.null(data_q)) {
@@ -266,7 +266,7 @@ ddm_sim_qmpe = function(pars,
   if (!is.na(pass) & !pass) {
     qmpe_nll = 1e10
     if(debug) cat(qmpe_nll, "\n")
-    return(nll)
+    return(qmpe_nll)
   }
   
   if (is.null(data_q)) {
