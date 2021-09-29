@@ -10,6 +10,8 @@ check_ddm_constraints <- function(){
     checks = checks + sum(private$par_matrix[, t0 < 0]) # t0
   if ("z" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (z <= 0) | (z >= 1)]) # z
+  if ("sv" %in% par_matrix_names)
+    checks = checks + sum(private$par_matrix[, (sv < 0) | (sv >= 10)]) # sz
   if ("sz" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
   if ("st0" %in% par_matrix_names)
