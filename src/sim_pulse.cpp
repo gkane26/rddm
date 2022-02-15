@@ -80,13 +80,13 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
   arma::vec tvec = arma::regspace(dt, dt, stimuli.n_cols*dt+dt),
     bound;
   if (bounds == 1) {
-    bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+    bound = hyperbolic_ratio_bound(tvec, 2*a, kappa, tc);
   } else if (bounds == 2) {
-    bound = weibull_bound(tvec, a, aprime, kappa, tc);
+    bound = weibull_bound(tvec, 2*a, aprime, kappa, tc);
   } else if (bounds == 3) {
-    bound = linear_bound(tvec, a, kappa, tc);
+    bound = linear_bound(tvec, 2*a, kappa, tc);
   } else {
-    bound = rep(a/2, tvec.n_elem);
+    bound = rep(a, tvec.n_elem);
   }
   
   // get urgency signal
@@ -109,7 +109,7 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
 
     arma::uvec thread_trials = trial_vector.rows(thread_start, thread_end);
 
-    arma::vec x = ((2 * z - 1) * a/2) + sqrt(sz) * zrandn(n_on_thread(i)),
+    arma::vec x = ((2 * z - 1) * a) + sqrt(z * sz) * zrandn(n_on_thread(i)),
       v_var = arma::zeros(n_on_thread(i)),
       rt = arma::zeros(n_on_thread(i));
 

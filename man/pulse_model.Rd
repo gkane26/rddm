@@ -45,7 +45,7 @@ pm$simulate(n, stimuli, par_values, par_names=NULL, ...)
 
 \item{bounds}{string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions}
 
-\item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times}
+\item{objective}{character; "fp" for fokker-planck simulation, "chisq" for euler simluaton with chisq metric, "qmpe" for euler simultion with qmpe metric}
 }
 \value{
 definition of pulse diffusion model object

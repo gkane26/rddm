@@ -75,10 +75,16 @@ pulse_fp_obj <- function(pars,
 pulse_x2_obj = function(pars,
                         data_q=NULL,
                         n_sim=1,
+                        min_p=1e-10,
                         transform_pars=F,
                         check_constraints=T,
                         debug=F,
+                        seed=-1L,
                         ...) {
+  
+  if (seed > 0) {
+    set.seed(seed)
+  }
   
   ### check constraints
   
@@ -91,9 +97,9 @@ pulse_x2_obj = function(pars,
   pass = checks[[2]]
   
   if (!is.na(pass) & !pass) {
-    nll = 1e10
-    if(debug) cat("nll =", nll, "\n")
-    return(nll)
+    chisq = 1e10
+    if(debug) cat(chisq, "\n")
+    return(chisq)
   }
   
   if (is.null(data_q)) {
@@ -113,12 +119,6 @@ pulse_x2_obj = function(pars,
     
     # simulate trials
     par_list = as.list(pars_only_mat[i])
-    
-    # this_sim = setDT(self$simulate(n_sim,
-    #                                private$stim_list[[i]],
-    #                                as.numeric(par_list),
-    #                                names(par_list),
-    #                                ...)$behavior)
     
     this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
                                           list(stimuli=private$stim_list[[i]]),
@@ -150,6 +150,87 @@ pulse_x2_obj = function(pars,
   
 }
 
+#' @noRd
+#' @importFrom foreach %do% %dopar%
+pulse_qmpe_obj = function(pars,
+                          data_q=NULL,
+                          n_sim=1,
+                          min_p=1e-10,
+                          transform_pars=F,
+                          check_constraints=T,
+                          debug=F,
+                          seed=-1L,
+                          ...) {
+  
+  if (seed > 0) {
+    set.seed(seed)
+  }
+  
+  ### check constraints
+  
+  checks = private$objective_checks(pars,
+                                    transform_pars,
+                                    check_constraints,
+                                    reverse_v=F,
+                                    debug)
+  pars = checks[[1]]
+  pass = checks[[2]]
+  
+  if (!is.na(pass) & !pass) {
+    qmpe_nll = 1e10
+    if(debug) cat(qmpe_nll, "\n")
+    return(qmpe_nll)
+  }
+  
+  if (is.null(data_q)) {
+    data_q = copy(self$data_q)
+  }
+  
+  
+  ### loop through conditions to get chisquare
+  
+  pars_only_mat = copy(private$par_matrix)
+  pars_only_mat = pars_only_mat[, -(1:(length(private$sim_cond)))]
+  rt_q_cols = (length(data_q)-length(private$p_q)+2):length(data_q)
+  
+  qmpe_nll = 0
+  
+  for (i in 1:private$par_transform[, .N]) {
+    
+    # simulate trials
+    par_list = as.list(pars_only_mat[i])
+    
+    this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
+                                          list(stimuli=private$stim_list[[i]]),
+                                          par_list,
+                                          private$fixed,
+                                          v_scale=private$v_scale,
+                                          bounds=private$bounds,
+                                          urgency=private$urgency,
+                                          seed=seed,
+                                          ...))$behavior)
+    
+    # get rt quantile matrix
+    sub_q = copy(data_q)
+    for(j in 1:length(private$sim_cond)) {
+      sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+    }
+    rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+    n_rt = sub_q[, n_response, .(response)][, n_response]
+    sim_rts = list(this_sim[response == 0, rt],
+                   this_sim[response == 1, rt],
+                   this_sim[is.na(response), rt])
+    
+    qmpe_nll = qmpe_nll + qmpe(sim_rts, rt_q_mat, private$p_q, n_rt, min_p=min_p)
+    
+  }
+  
+  if(is.na(qmpe_nll)) qmpe_nll = 1e10
+  if(debug) cat(qmpe_nll, "\n")
+  qmpe_nll
+  
+}
+
 
 check_pdm_constraints <- function(){
   par_matrix_names = names(private$par_matrix)
@@ -165,9 +246,9 @@ check_pdm_constraints <- function(){
   if ("sv" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sv < 0)]) # sv
   if ("sz" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
+    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= 1)]) # sz
   if ("st0" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
+    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= 1)]) # st0
   if ("lambda" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (lambda < 0)]) # lambda
   if ("aprime" %in% par_matrix_names)
@@ -197,7 +278,7 @@ check_pdm_constraints <- function(){
 #' 
 #' @usage model$set_objective(objective)
 #' 
-#' @param objective string; the objective function to be used; either "fp" or "chisq"
+#' @param objective string; the objective function to be used; either "fp", "chisq", or "qmpe"
 #' 
 #' @return modifies the field \code{obj}
 #' 
@@ -207,6 +288,8 @@ set_pdm_objective <- function(objective="chisq") {
     self$obj = private$fp_obj
   } else if (objective == "chisq") {
     self$obj = private$chisq_obj
+  } else if (objective == "qmpe") {
+    self$obj = private$qmpe_obj
   } else {
     stop("specified objective not supported")
   }
@@ -409,7 +492,7 @@ init_pulse_model = function(dat,
             0, 0, 0)
   upper = c(100, 25, 5,
             100, .95, 100,
-            1, 1, 2,
+            1, 1, 1,
             100, 1, 5, 5,
             10, 10, 10)
   default_pars = c("v", "a", "t0")
@@ -509,7 +592,7 @@ init_pulse_model = function(dat,
 #' @param fixed_pars named numeric; to fix a parameter at a specified value, use a named vector as with start_values
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
 #' @param bounds string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions
-#' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times
+#' @param objective character; "fp" for fokker-planck simulation, "chisq" for euler simluaton with chisq metric, "qmpe" for euler simultion with qmpe metric
 #'
 #' @return definition of pulse diffusion model object
 #'
@@ -520,7 +603,8 @@ pulse_model = R6::R6Class("pulse_model",
                             initialize=init_pulse_model,
                             set_objective=set_pdm_objective,
                             predict=predict_pulse_model,
-                            simulate=simulate_pulse_model
+                            simulate=simulate_pulse_model,
+                            get_stimulus=function() return(private$stim_list)
                           ), private=list(
                             dt=NULL,
                             as_function=NULL,
@@ -528,5 +612,6 @@ pulse_model = R6::R6Class("pulse_model",
                             v_scale=NULL,
                             check_par_constraints=check_pdm_constraints,
                             fp_obj = pulse_fp_obj,
-                            chisq_obj = pulse_x2_obj
+                            chisq_obj = pulse_x2_obj,
+                            qmpe_obj = pulse_qmpe_obj
                           ))

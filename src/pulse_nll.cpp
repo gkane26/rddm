@@ -55,7 +55,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   if(n_x_breaks % 2 == 1)
     n_x_breaks++;
   
-  arma::vec bin_breaks = arma::linspace(-a/2, a/2, n_x_breaks);
+  arma::vec bin_breaks = arma::linspace(-a, a, n_x_breaks);
   arma::vec bin_centers = bin_breaks.head(bin_breaks.n_elem-1) + diff(bin_breaks)/2;
   
   // initialize prob mass matrix and transition matrix
@@ -68,7 +68,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   // populate first bin of prob mass matrix: gaussian with mean=z, sd=sqrt(sz)
   if (sz < 1e-10)
     sz = 1e-10;
-  arma::vec p_breaks = arma::normcdf(bin_breaks, (2 * z - 1) * a/2, sqrt(sz));
+  arma::vec p_breaks = arma::normcdf(bin_breaks, (2 * z - 1) * a, sqrt(z*sz));
   p_x(0, 0) = p_breaks(0);
   p_x(arma::span(1,p_x.n_rows-2), 0) = arma::diff(p_breaks);
   p_x(p_x.n_rows-1, 0) = 1-p_breaks(p_breaks.n_elem-1);
@@ -83,13 +83,13 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   arma::vec tvec = arma::regspace(dt, dt, stimulus.n_cols*dt+dt),
     bound;
   if (bounds == 1) {
-    bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
+    bound = hyperbolic_ratio_bound(tvec, 2*a, kappa, tc);
   } else if (bounds == 2) {
-    bound = weibull_bound(tvec, a, aprime, kappa, tc);
+    bound = weibull_bound(tvec, 2*a, aprime, kappa, tc);
   } else if (bounds == 3) {
-    bound = linear_bound(tvec, a, kappa, tc);
+    bound = linear_bound(tvec, 2*a, kappa, tc);
   } else {
-    bound = rep(a/2, tvec.n_elem);
+    bound = rep(a, tvec.n_elem);
   }
   
   // get urgency signal
@@ -135,10 +135,10 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   
   // add t0 to response time distribution
   
-  int t0_bin_min = round((t0-st0/2)/dt);
+  int t0_bin_min = round((t0-(t0*st0)/2)/dt);
   if (t0_bin_min < 0)
     t0_bin_min = 0;
-  int t0_bin_max = round((t0+st0/2)/dt);
+  int t0_bin_max = round((t0+(t0*st0)/2)/dt);
   if (t0_bin_max < 0)
     t0_bin_max = 0;
   arma::mat t0_rt = arma::zeros(t0_bin_max+p_rt.n_rows,2);

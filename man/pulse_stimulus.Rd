@@ -12,13 +12,13 @@ pulse_stimulus(
   isi = 0.1,
   pre_stim = 0,
   dt = 0.001,
-  as_array = F
+  as_array = T
 )
 }
 \arguments{
 \item{up_sequence}{string; string timepoint by timepoint evidence to upper boundary}
 
-\item{down_sequence}{string; string timepoint by timepoint evidence to lower boundary (optional)}
+\item{down_sequence}{string; string timepoint by timepoint evidence to lower boundary (optional). If NULL, no evidence (zeros)}
 
 \item{pattern}{string; pattern to separate timepoints. Default = ""}
 
@@ -30,7 +30,7 @@ pulse_stimulus(
 
 \item{dt}{numeric; timestep for simulation, default = .001}
 
-\item{as_array}{logical; if True, return as 3d array (2 x timepoints x trials)}
+\item{as_array}{logical; if TRUE, return as 3d array (2 x timepoints x trials). If FALSE, return as list. default=TRUE}
 }
 \value{
 stimulus train

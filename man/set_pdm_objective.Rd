@@ -7,7 +7,7 @@
 model$set_objective(objective)
 }
 \arguments{
-\item{objective}{string; the objective function to be used; either "fp" or "chisq"}
+\item{objective}{string; the objective function to be used; either "fp", "chisq", or "qmpe"}
 }
 \value{
 modifies the field \code{obj}
