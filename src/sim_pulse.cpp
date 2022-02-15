@@ -109,7 +109,7 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
 
     arma::uvec thread_trials = trial_vector.rows(thread_start, thread_end);
 
-    arma::vec x = a/2*(z-0.5) + sqrt(sz) * zrandn(n_on_thread(i)),
+    arma::vec x = ((2 * z - 1) * a/2) + sqrt(sz) * zrandn(n_on_thread(i)),
       v_var = arma::zeros(n_on_thread(i)),
       rt = arma::zeros(n_on_thread(i));
 
@@ -164,7 +164,7 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
     
   }
   
-  arma::vec t0_vec = t0 + st0 * (arma::randu(n_total) - 0.5);
+  arma::vec t0_vec = t0 + t0 * st0 * (arma::randu(n_total) - 0.5);
   t0_vec.clamp(0, arma::datum::inf);
   
   DataFrame sim = DataFrame::create(Named("trial") = trial_vector,

@@ -35,7 +35,7 @@ dm$simulate(n, par_values)
 
 \item{bounds}{string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions}
 
-\item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times}
+\item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, "chisquare" to use the difference in chisq from actual vs. simulated response times, or "qmpe" to use the quantile maximum product estimation method (comparing simulated vs. actual RT distribution) from Brown & Heathcote}
 
 \item{...}{additional arguments passed to the objective function}
 }

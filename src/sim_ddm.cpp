@@ -103,8 +103,8 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
       t = dt;
     
     arma::vec v_var = v + sv * zrandn(n_on_thread(i)) + dc,
-      z_var = z + sz * (arma::randu(n_on_thread(i))-.5),
-      x = a/2 * (z_var - 0.5),
+      x = (2 * (z + z * sz * (arma::randu(n_on_thread(i)) - 0.5)) - 1) * a/2,
+      // x = ((2 * z - 1) * a/2) + (a * z * sz * (arma::randu(n_on_thread(i))-.5)),
       rt = arma::zeros(n_on_thread(i));
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread(i)-1, n_on_thread(i));
     
@@ -142,7 +142,7 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
     }
   }
   
-  arma::vec t0_vec = t0 + st0 * (arma::randu(n) - 0.5);
+  arma::vec t0_vec = t0 + (t0 * st0 * (arma::randu(n) - 0.5));
   t0_vec.clamp(0, arma::datum::inf);
   
   DataFrame sim = DataFrame::create(Named("response")=response_full,
@@ -311,11 +311,10 @@ List sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0,
       t = dt;
     
     arma::vec v_var = v(thread_span) + sv(thread_span) % zrandn(n_on_thread(i)) + dc(thread_span),
-      z_var = z(thread_span) + sz(thread_span) % (arma::randu(n_on_thread(i)) - 0.5),
-      x = (a(thread_span) / 2) % (z_var - 0.5),
+      x = (2 * (z(thread_span) + z(thread_span) * sz(thread_span) * (arma::randu(n_on_thread(i)) - 0.5)) - 1) * a(thread_span)/2,
       dW = s(thread_span) * sqrt(dt),
       rt = arma::zeros(n_on_thread(i));
-
+    
     arma::uvec still_drift = arma::regspace<arma::uvec>(0, n_on_thread(i)-1);
     arma::mat gamma_thread = gamma.cols(thread_start, thread_end);
     arma::mat gamma_thread_t = gamma_thread.t();
@@ -359,7 +358,7 @@ List sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0,
     
   }
   
-  arma::vec t0_vec = t0 + st0 % (arma::randu(v.n_elem) - 0.5);
+  arma::vec t0_vec = t0 + (t0 * st0 % (arma::randu(v.n_elem) - 0.5));
   t0_vec.clamp(0, arma::datum::inf);
   
   DataFrame sim = DataFrame::create(Named("response")=response_full,

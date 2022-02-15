@@ -22,14 +22,14 @@ double free_transition_density(double x, double t, double y, double tau, double 
   // probability that a particle starting at y at time tau will be at x at time t
   //  v = drift rate
   
-  return (1 / sqrt(2*PI*pow(s,2)*(t-tau))) * exp(-pow(x - y - v*(t-tau), 2) / (2 * pow(s,2) * (t-tau)));
+  return (1 / sqrt(2*M_PI*pow(s,2)*(t-tau))) * exp(-pow(x - y - v*(t-tau), 2) / (2 * pow(s,2) * (t-tau)));
 }
 
 arma::vec free_transition_density_vec(double x, double t, arma::vec y, double tau, double v=0, double s=1){
   // probability that a particle starting at y at time tau will be at x at time t
   //  v = drift rate
   
-  return (1 / sqrt(2*PI*pow(s,2)*(t-tau))) * exp(-pow(x - y - v*(t-tau), 2) / (2 * pow(s,2) * (t-tau)));
+  return (1 / sqrt(2*M_PI*pow(s,2)*(t-tau))) * exp(-pow(x - y - v*(t-tau), 2) / (2 * pow(s,2) * (t-tau)));
 }
 
 double kernel_function(double x, double t, double y, double tau, double dx=0, double v=0, double s=1){
@@ -82,7 +82,6 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
                        double dt=.01, double max_time=10, int bounds=0, int n_threads=1){
   
   t0 = round(t0/dt)*dt;
-  z = (2*z-1)*a/2;
   int nBins = round(max_time / dt)+1;
   
   arma::vec v_vec, p_v, z_vec;
@@ -92,14 +91,16 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
     p_v = 1;
   }else{
     v_vec = arma::linspace(v-3*sv, v+3*sv, sv_points);
-    p_v = normpdf(v_vec, v, sv);
+    p_v = arma::normpdf(v_vec, v, sv);
     p_v = p_v / sum(p_v);
   }
   
-  if(sz==0)
-    z_vec = z;
-  else
-    z_vec = arma::linspace(z-sz/2, z+sz/2, sz_points);
+  double z_norm = (2 * z - 1) * a/2;
+  if(sz==0) {
+    z_vec = z_norm;
+  } else {
+    z_vec = arma::linspace(z_norm - (a*z*sz)/2, z_norm + (a*z*sz)/2, sz_points);
+  }
   
   arma::vec tvec = arma::regspace(dt, dt, max_time+dt);
   arma::vec bound;
@@ -161,8 +162,8 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
   }
   
   // add t0 to get rt_density
-  double min_t0_bins = round((t0-st0/2)/dt),
-    max_t0_bins = round((t0+st0/2)/dt),
+  double min_t0_bins = round((t0 - (t0*st0) / 2) / dt),
+    max_t0_bins = round((t0 + (t0*st0) / 2) / dt),
     p_t0 = 1 / (max_t0_bins - min_t0_bins + 1);
   arma::mat rt_density = arma::zeros(density_shared.n_rows + max_t0_bins + 1, 2);
   

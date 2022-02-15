@@ -13,9 +13,9 @@ check_ddm_constraints <- function(){
   if ("sv" %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (sv < 0) | (sv >= 10)]) # sz
   if ("sz" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= z)]) # sz
+    checks = checks + sum(private$par_matrix[, (sz < 0) | (sz >= 1)]) # sz
   if ("st0" %in% par_matrix_names)
-    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= t0)]) # st0
+    checks = checks + sum(private$par_matrix[, (st0 < 0) | (st0 >= 1)]) # st0
   if ("aprime"  %in% par_matrix_names)
     checks = checks + sum(private$par_matrix[, (aprime < 0) | (aprime > 1)]) # aprime
   if ("kappa" %in% par_matrix_names)
@@ -39,7 +39,7 @@ check_ddm_constraints <- function(){
 #' 
 #' @usage model$set_objective(objective)
 #' 
-#' @param objective string; the objective function to be used; either "rtdists", "integral", or "chisq"
+#' @param objective string; the objective function to be used; either "rtdists", "integral", "chisq", or "qmpe"
 #' 
 #' @return modifies the field \code{obj}
 #' 
@@ -111,7 +111,7 @@ init_diffusion_model = function(dat,
             0, 0, 0)
   upper = c(100, 25, 5,
             .9, 100,
-            10, 2, .5,
+            10, 1, 1,
             1, 10, 2,
             10, 10, 10)
   default_pars = c("v", "a", "t0")
@@ -402,7 +402,7 @@ simulate_diffusion_model = function(n=10000, pars=NULL, ...) {
 #' @param max_time numeric; max time to simulate a decision. Lower max time keeps computation times lower, but too low will compromise accuracy
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
 #' @param bounds string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions
-#' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, or "chisquare" to use the difference in chisq from actual vs. simulated response times
+#' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, "chisquare" to use the difference in chisq from actual vs. simulated response times, or "qmpe" to use the quantile maximum product estimation method (comparing simulated vs. actual RT distribution) from Brown & Heathcote
 #' @param ... additional arguments passed to the objective function
 #'
 #' @field name arbitrary name for model

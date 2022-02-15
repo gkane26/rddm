@@ -31,6 +31,15 @@ ddm_rtdists_nll = function(pars,
     this_par_matrix[, z := z*a]
   }
   
+  if ("sz" %in% names(this_par_matrix)){
+    this_par_matrix[, sz := z*sz]
+  }
+  
+  if ("st0" %in% names(this_par_matrix)){
+    this_par_matrix[, st0 := st0 * t0]
+    this_par_matrix[, t0 := t0 - st0 / 2]
+  }
+  
   if("dc" %in% names(this_par_matrix)){
     this_par_matrix[, v := v + dc]
     this_par_matrix[, dc := NULL]

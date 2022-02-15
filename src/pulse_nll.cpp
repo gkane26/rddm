@@ -68,7 +68,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   // populate first bin of prob mass matrix: gaussian with mean=z, sd=sqrt(sz)
   if (sz < 1e-10)
     sz = 1e-10;
-  arma::vec p_breaks = arma::normcdf(bin_breaks, a/2*(z-0.5), sqrt(sz));
+  arma::vec p_breaks = arma::normcdf(bin_breaks, (2 * z - 1) * a/2, sqrt(sz));
   p_x(0, 0) = p_breaks(0);
   p_x(arma::span(1,p_x.n_rows-2), 0) = arma::diff(p_breaks);
   p_x(p_x.n_rows-1, 0) = 1-p_breaks(p_breaks.n_elem-1);
