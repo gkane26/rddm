@@ -15,12 +15,11 @@ using namespace Rcpp;
 //' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
-//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param z numeric; starting point, 0 < z < 1, default = .5
 //' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 //' @param lambda numeric; O-U process slope
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
@@ -29,6 +28,7 @@ using namespace Rcpp;
 //' @param uslope numeric; urgency scaling factor, default = 0;
 //' @param umag numeric; urgency magnitude, default = 0;
 //' @param udelay numeric; urgency delay, default = 0;
+//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param dt numeric; time step of simulation, default = .001
 //' @param xbins numeric; number of evidence bins, default = 100
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
@@ -39,10 +39,10 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
-                       double s=1, double z=0.5, double dc=0,
+                       double z=0.5, double dc=0,
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
-                       double uslope=0, double umag=0, double udelay=0,
+                       double uslope=0, double umag=0, double udelay=0, double s=1, 
                        double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   // scale drift rate
@@ -65,10 +65,10 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   t_mat(0,0)=1;
   t_mat(t_mat.n_rows-1,t_mat.n_cols-1)=1;
   
-  // populate first bin of prob mass matrix: gaussian with mean=z, sd=sqrt(sz)
+  // populate first bin of prob mass matrix: gaussian with mean=z, sd=sqrt(a*sz)
   if (sz < 1e-10)
     sz = 1e-10;
-  arma::vec p_breaks = arma::normcdf(bin_breaks, (2 * z - 1) * a, sqrt(z*sz));
+  arma::vec p_breaks = arma::normcdf(bin_breaks, (2 * z - 1) * a/2, sqrt(a*sz));
   p_x(0, 0) = p_breaks(0);
   p_x(arma::span(1,p_x.n_rows-2), 0) = arma::diff(p_breaks);
   p_x(p_x.n_rows-1, 0) = 1-p_breaks(p_breaks.n_elem-1);
@@ -83,13 +83,13 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
   arma::vec tvec = arma::regspace(dt, dt, stimulus.n_cols*dt+dt),
     bound;
   if (bounds == 1) {
-    bound = hyperbolic_ratio_bound(tvec, 2*a, kappa, tc);
+    bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
   } else if (bounds == 2) {
-    bound = weibull_bound(tvec, 2*a, aprime, kappa, tc);
+    bound = weibull_bound(tvec, a, aprime, kappa, tc);
   } else if (bounds == 3) {
-    bound = linear_bound(tvec, 2*a, kappa, tc);
+    bound = linear_bound(tvec, a, kappa, tc);
   } else {
-    bound = rep(a, tvec.n_elem);
+    bound = rep(a/2, tvec.n_elem);
   }
   
   // get urgency signal
@@ -165,12 +165,11 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
 //' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
-//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param z numeric; starting point, 0 < z < 1, default = .5
 //' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 //' @param lambda numeric; O-U process slope
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
@@ -178,6 +177,7 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
 //' @param uslope numeric; urgency scaling factor, default = 0;
 //' @param umag numeric; urgency magnitude, default = 0;
 //' @param udelay numeric; urgency delay, default = 0;
+//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param xbins numeric; number of evidence bins, default = 100
@@ -190,18 +190,18 @@ arma::mat pulse_fp_fpt(arma::mat stimulus, double v, double a, double t0,
 // [[Rcpp::export]]
 double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
                        double v, double a, double t0,
-                       double s=1, double z=0.5, double dc=0,
+                       double z=0.5, double dc=0,
                        double sv=0, double st0=0, double sz=0, double lambda=0,
                        double aprime=0, double kappa=0, double tc=.25,
-                       double uslope=0, double umag=0, double udelay=0,
+                       double uslope=0, double umag=0, double udelay=0, double s=1, 
                        double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0){
   
   arma::mat fpt_density = pulse_fp_fpt(stimulus,
                                        v, a, t0,
-                                       s, z, dc,
+                                       z, dc,
                                        sv, st0, sz,
                                        lambda, aprime, kappa, tc,
-                                       uslope, umag, udelay,
+                                       uslope, umag, udelay, s,
                                        v_scale, dt, xbins, bounds, urgency);
   
   return fpt_density(rt/dt-1, abs(1-choice));
@@ -218,13 +218,12 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @param down_sequence vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)
 //' @param v numeric; drift rate, either single value or vector for each trial
 //' @param a numeric; initial boundary, either single value or vector for each trial
-//' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 //' @param t0 numeric; non-decision time, either single value or vector for each trial
 //' @param z numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5
 //' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz numeric; variability in starting point (percentage of boundary a), either single value or vector for each trial. Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 //' @param lambda numeric; O-U process slope, either single value or vector for each trial
 //' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 //' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
@@ -232,6 +231,7 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 //' @param uslope numeric; urgency scaling factor, default = 0;
 //' @param umag numeric; urgency magnitude, default = 0;
 //' @param udelay numeric; urgency delay, default = 0;
+//' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 //' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 //' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .002
@@ -246,11 +246,12 @@ double pulse_trial_lik(int choice, double rt, arma::mat stimulus,
 // [[Rcpp::export]]
 double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
                  arma::vec v, arma::vec a, arma::vec t0,
-                 arma::vec s=0, arma::vec z=0, arma::vec dc=0,
+                 arma::vec z=0, arma::vec dc=0,
                  arma::vec sv=0, arma::vec st0=0, arma::vec sz=0,
                  arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0,
-                 arma::vec uslope=0, arma::vec umag=0, arma::vec udelay=0, bool check_pars=true,
-                 double v_scale=1, double dt=.001, int xbins=200, int bounds=0, int urgency=0, int n_threads=1){
+                 arma::vec uslope=0, arma::vec umag=0, arma::vec udelay=0, arma::vec s=0,
+                 bool check_pars=true, double v_scale=1, double dt=.001, int xbins=200,
+                 int bounds=0, int urgency=0, int n_threads=1){
   
   omp_set_num_threads(n_threads);
   
@@ -301,10 +302,10 @@ double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
     
     double p_local = pulse_trial_lik(choices(i), rt(i), stimuli.slice(i),
                                      v(i), a(i), t0(i),
-                                     s(i), z(i), dc(i),
+                                     z(i), dc(i),
                                      sv(i), st0(i), sz(i),
                                      lambda(i), aprime(i), kappa(i), tc(i),
-                                     uslope(i), umag(i), udelay(i),
+                                     uslope(i), umag(i), udelay(i), s(i),
                                      v_scale, dt, xbins, bounds, urgency);
     
     if(p_local<1e-10)

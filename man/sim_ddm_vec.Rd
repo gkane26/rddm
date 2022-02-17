@@ -45,7 +45,7 @@ sim_ddm_vec(
 
 \item{st0}{vector; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{vector; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
+\item{sz}{vector; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
 
 \item{aprime}{vector; degree of collapse, default = 0}
 

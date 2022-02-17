@@ -9,7 +9,6 @@ pulse_fp_fpt(
   v,
   a,
   t0,
-  s = 1,
   z = 0.5,
   dc = 0,
   sv = 0,
@@ -22,6 +21,7 @@ pulse_fp_fpt(
   uslope = 0,
   umag = 0,
   udelay = 0,
+  s = 1,
   v_scale = 1,
   dt = 0.001,
   xbins = 200L,
@@ -38,8 +38,6 @@ pulse_fp_fpt(
 
 \item{t0}{numeric; non-decision time}
 
-\item{s}{numeric; standard deviation in wiener diffusion noise}
-
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
 \item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
@@ -48,7 +46,7 @@ pulse_fp_fpt(
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
+\item{sz}{numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0}
 
 \item{lambda}{numeric; O-U process slope}
 
@@ -63,6 +61,8 @@ pulse_fp_fpt(
 \item{umag}{numeric; urgency magnitude, default = 0;}
 
 \item{udelay}{numeric; urgency delay, default = 0;}
+
+\item{s}{numeric; standard deviation in wiener diffusion noise}
 
 \item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
 

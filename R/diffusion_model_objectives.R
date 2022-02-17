@@ -28,11 +28,11 @@ ddm_rtdists_nll = function(pars,
   
   this_par_matrix = copy(private$par_matrix)
   if ("z" %in% names(this_par_matrix)){
-    this_par_matrix[, z := z*a]
+    this_par_matrix[, z := z * a]
   }
   
   if ("sz" %in% names(this_par_matrix)){
-    this_par_matrix[, sz := z*sz]
+    this_par_matrix[, sz := sz * a]
   }
   
   if ("st0" %in% names(this_par_matrix)){

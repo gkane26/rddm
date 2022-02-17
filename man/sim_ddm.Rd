@@ -47,7 +47,7 @@ sim_ddm(
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
+\item{sz}{numeric; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < 1, default = 0}
 
 \item{aprime}{numeric; degree of collapse, default = 0}
 

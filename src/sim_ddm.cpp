@@ -22,7 +22,7 @@ using namespace std::chrono; // nanoseconds, system_clock, seconds
 //' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz numeric; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < 1, default = 0
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 0
 //' @param tc numeric; time constant of collapse, default = .25
@@ -103,8 +103,7 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
       t = dt;
     
     arma::vec v_var = v + sv * zrandn(n_on_thread(i)) + dc,
-      x = (2 * (z + z * sz * (arma::randu(n_on_thread(i)) - 0.5)) - 1) * a/2,
-      // x = ((2 * z - 1) * a/2) + (a * z * sz * (arma::randu(n_on_thread(i))-.5)),
+      x = ((2 * z - 1) * a / 2) + (sz * a * (arma::randu(n_on_thread(i)) - 0.5)),
       rt = arma::zeros(n_on_thread(i));
     arma::uvec still_drift = arma::linspace<arma::uvec>(0, n_on_thread(i)-1, n_on_thread(i));
     
@@ -165,7 +164,7 @@ List sim_ddm(int n, double v, double a, double t0, double z=.5, double dc=0,
 //' @param dc vector; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 //' @param sv vector; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 vector; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz vector; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz vector; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 //' @param aprime vector; degree of collapse, default = 0
 //' @param kappa vector; slope of collapse, default = 0
 //' @param tc vector; time constant of collapse, default = .25
@@ -311,7 +310,7 @@ List sim_ddm_vec(arma::vec v, arma::vec a, arma::vec t0,
       t = dt;
     
     arma::vec v_var = v(thread_span) + sv(thread_span) % zrandn(n_on_thread(i)) + dc(thread_span),
-      x = (2 * (z(thread_span) + z(thread_span) * sz(thread_span) * (arma::randu(n_on_thread(i)) - 0.5)) - 1) * a(thread_span)/2,
+      x = ((2 * z(thread_span) - 1) * a(thread_span) / 2) + (sz(thread_span) * a(thread_span) * (arma::randu(n_on_thread(i)) - 0.5)),
       dW = s(thread_span) * sqrt(dt),
       rt = arma::zeros(n_on_thread(i));
     

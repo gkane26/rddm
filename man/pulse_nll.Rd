@@ -11,7 +11,6 @@ pulse_nll(
   v,
   a,
   t0,
-  s = 0L,
   z = 0L,
   dc = 0L,
   sv = 0L,
@@ -24,6 +23,7 @@ pulse_nll(
   uslope = 0L,
   umag = 0L,
   udelay = 0L,
+  s = 0L,
   check_pars = TRUE,
   v_scale = 1,
   dt = 0.001,
@@ -44,8 +44,6 @@ pulse_nll(
 
 \item{t0}{numeric; non-decision time, either single value or vector for each trial}
 
-\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial}
-
 \item{z}{numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5}
 
 \item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
@@ -54,7 +52,7 @@ pulse_nll(
 
 \item{st0}{numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
+\item{sz}{numeric; variability in starting point (percentage of boundary a), either single value or vector for each trial. Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0}
 
 \item{lambda}{numeric; O-U process slope, either single value or vector for each trial}
 
@@ -69,6 +67,8 @@ pulse_nll(
 \item{umag}{numeric; urgency magnitude, default = 0;}
 
 \item{udelay}{numeric; urgency delay, default = 0;}
+
+\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial}
 
 \item{check_pars}{logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true}
 

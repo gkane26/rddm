@@ -99,7 +99,7 @@ arma::mat ddm_integral_fpt(double v, double a, double t0, double z=.5, double dc
   if(sz==0) {
     z_vec = z_norm;
   } else {
-    z_vec = arma::linspace(z_norm - (a*z*sz)/2, z_norm + (a*z*sz)/2, sz_points);
+    z_vec = arma::linspace(z_norm - (sz * a), z_norm + (sz * a), sz_points);
   }
   
   arma::vec tvec = arma::regspace(dt, dt, max_time+dt);

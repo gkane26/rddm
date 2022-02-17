@@ -112,12 +112,11 @@ zrandseed <- function(s) {
 #' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
-#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param z numeric; starting point, 0 < z < 1, default = .5
 #' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 #' @param lambda numeric; O-U process slope
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
@@ -126,6 +125,7 @@ zrandseed <- function(s) {
 #' @param uslope numeric; urgency scaling factor, default = 0;
 #' @param umag numeric; urgency magnitude, default = 0;
 #' @param udelay numeric; urgency delay, default = 0;
+#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param dt numeric; time step of simulation, default = .001
 #' @param xbins numeric; number of evidence bins, default = 100
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
@@ -134,8 +134,8 @@ zrandseed <- function(s) {
 #' @return data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
 #'
 #' @export
-pulse_fp_fpt <- function(stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
-    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
+pulse_fp_fpt <- function(stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, s = 1, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
+    .Call('_rddm_pulse_fp_fpt', PACKAGE = 'rddm', stimulus, v, a, t0, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, s, v_scale, dt, xbins, bounds, urgency)
 }
 
 #' Get pulse model likelihood for a given trial
@@ -146,12 +146,11 @@ pulse_fp_fpt <- function(stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0
 #' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
-#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param z numeric; starting point, 0 < z < 1, default = .5
 #' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 #' @param lambda numeric; O-U process slope
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
@@ -159,6 +158,7 @@ pulse_fp_fpt <- function(stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0
 #' @param uslope numeric; urgency scaling factor, default = 0;
 #' @param umag numeric; urgency magnitude, default = 0;
 #' @param udelay numeric; urgency delay, default = 0;
+#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param xbins numeric; number of evidence bins, default = 100
@@ -168,8 +168,8 @@ pulse_fp_fpt <- function(stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0
 #' @return probability of choice and rt for trial given pulse model parameters
 #'
 #' @export
-pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, s = 1, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
-    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, xbins, bounds, urgency)
+pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, z = 0.5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, s = 1, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L) {
+    .Call('_rddm_pulse_trial_lik', PACKAGE = 'rddm', choice, rt, stimulus, v, a, t0, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, s, v_scale, dt, xbins, bounds, urgency)
 }
 
 #' Get pulse model negative log likelihood for a set of trials
@@ -181,13 +181,12 @@ pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, s = 1, z = 0.5, dc =
 #' @param down_sequence vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)
 #' @param v numeric; drift rate, either single value or vector for each trial
 #' @param a numeric; initial boundary, either single value or vector for each trial
-#' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 #' @param t0 numeric; non-decision time, either single value or vector for each trial
 #' @param z numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5
 #' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz numeric; variability in starting point (percentage of boundary a), either single value or vector for each trial. Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 #' @param lambda numeric; O-U process slope, either single value or vector for each trial
 #' @param aprime numeric; degree of collapse, either single value or vector for each trial, default = 0
 #' @param kappa numeric; slope of collapse, either single value or vector for each trial, default = 0
@@ -195,6 +194,7 @@ pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, s = 1, z = 0.5, dc =
 #' @param uslope numeric; urgency scaling factor, default = 0;
 #' @param umag numeric; urgency magnitude, default = 0;
 #' @param udelay numeric; urgency delay, default = 0;
+#' @param s numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial
 #' @param check_pars logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true
 #' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .002
@@ -206,8 +206,8 @@ pulse_trial_lik <- function(choice, rt, stimulus, v, a, t0, s = 1, z = 0.5, dc =
 #' @return negative log likelihood of all choices and rts given pulse model parameters
 #'
 #' @export
-pulse_nll <- function(choices, rt, stimuli, v, a, t0, s = 0L, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L, n_threads = 1L) {
-    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, check_pars, v_scale, dt, xbins, bounds, urgency, n_threads)
+pulse_nll <- function(choices, rt, stimuli, v, a, t0, z = 0L, dc = 0L, sv = 0L, st0 = 0L, sz = 0L, lambda = 0L, aprime = 0L, kappa = 0L, tc = 0L, uslope = 0L, umag = 0L, udelay = 0L, s = 0L, check_pars = TRUE, v_scale = 1, dt = .001, xbins = 200L, bounds = 0L, urgency = 0L, n_threads = 1L) {
+    .Call('_rddm_pulse_nll', PACKAGE = 'rddm', choices, rt, stimuli, v, a, t0, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, s, check_pars, v_scale, dt, xbins, bounds, urgency, n_threads)
 }
 
 #' Get predicted behavior from pulse model
@@ -266,7 +266,7 @@ pulse_trial_stimulus <- function(stim_seq, dur = 0.01, isi = 0.1, pre_stim = 0, 
 #' @param dc numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz numeric; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < 1, default = 0
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 0
 #' @param tc numeric; time constant of collapse, default = .25
@@ -298,7 +298,7 @@ sim_ddm <- function(n, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, aprime
 #' @param dc vector; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0
 #' @param sv vector; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 vector; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz vector; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz vector; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
 #' @param aprime vector; degree of collapse, default = 0
 #' @param kappa vector; slope of collapse, default = 0
 #' @param tc vector; time constant of collapse, default = .25
@@ -368,12 +368,11 @@ sim_evacc <- function(n, stimuli, a, t0, z = 0, dc = 0, sv = 0, st0 = 0, sz = 0,
 #' @param v numeric; drift rate
 #' @param a numeric; initial boundary
 #' @param t0 numeric; non-decision time
-#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param z numeric; starting point, 0 < z < 1, default = .5
 #' @param dc numeric; drift criterion, upper drift = v, lower drift = v-d
 #' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 #' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-#' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+#' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 #' @param lambda numeric; O-U process slope
 #' @param aprime numeric; degree of collapse, default = 0
 #' @param kappa numeric; slope of collapse, default = 1
@@ -381,6 +380,7 @@ sim_evacc <- function(n, stimuli, a, t0, z = 0, dc = 0, sv = 0, st0 = 0, sz = 0,
 #' @param uslope numeric; urgency scaling factor, default = 0;
 #' @param umag numeric; urgency magnitude, default = 0;
 #' @param udelay numeric; urgency delay, default = 0;
+#' @param s numeric; standard deviation in wiener diffusion noise
 #' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 #' @param dt numeric; time step of simulation, default = .001
 #' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
@@ -392,8 +392,8 @@ sim_evacc <- function(n, stimuli, a, t0, z = 0, dc = 0, sv = 0, st0 = 0, sz = 0,
 #' @return List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 #' 
 #' @export
-sim_pulse <- function(n, stimuli, v, a, t0, s = 1, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE, seed = -1L) {
-    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimuli, v, a, t0, s, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, v_scale, dt, bounds, urgency, n_threads, return_accu, seed)
+sim_pulse <- function(n, stimuli, v, a, t0, z = .5, dc = 0, sv = 0, st0 = 0, sz = 0, lambda = 0, aprime = 0, kappa = 0, tc = .25, uslope = 0, umag = 0, udelay = 0, s = 1, v_scale = 1, dt = .001, bounds = 0L, urgency = 0L, n_threads = 1L, return_accu = FALSE, seed = -1L) {
+    .Call('_rddm_sim_pulse', PACKAGE = 'rddm', n, stimuli, v, a, t0, z, dc, sv, st0, sz, lambda, aprime, kappa, tc, uslope, umag, udelay, s, v_scale, dt, bounds, urgency, n_threads, return_accu, seed)
 }
 
 #' Urgency functions

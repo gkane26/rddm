@@ -16,12 +16,11 @@ using namespace Rcpp;
 //' @param v numeric; drift rate
 //' @param a numeric; initial boundary
 //' @param t0 numeric; non-decision time
-//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param z numeric; starting point, 0 < z < 1, default = .5
 //' @param dc numeric; drift criterion, upper drift = v, lower drift = v-d
 //' @param sv numeric; standard deviation of variability in drift rate, sv >= 0, default = 0
 //' @param st0 numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0
-//' @param sz numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0
+//' @param sz numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0
 //' @param lambda numeric; O-U process slope
 //' @param aprime numeric; degree of collapse, default = 0
 //' @param kappa numeric; slope of collapse, default = 1
@@ -29,6 +28,7 @@ using namespace Rcpp;
 //' @param uslope numeric; urgency scaling factor, default = 0;
 //' @param umag numeric; urgency magnitude, default = 0;
 //' @param udelay numeric; urgency delay, default = 0;
+//' @param s numeric; standard deviation in wiener diffusion noise
 //' @param v_scale numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number
 //' @param dt numeric; time step of simulation, default = .001
 //' @param bounds int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear
@@ -42,10 +42,10 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
-               double s=1, double z=.5, double dc=0,
+              double z=.5, double dc=0,
                double sv=0, double st0=0, double sz=0,
                double lambda=0, double aprime=0, double kappa=0, double tc=.25, 
-               double uslope=0, double umag=0, double udelay=0,
+               double uslope=0, double umag=0, double udelay=0,  double s=1,
                double v_scale=1, double dt=.001, int bounds=0, int urgency=0,
                int n_threads=1, bool return_accu=false, int seed=-1){
   
@@ -80,13 +80,13 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
   arma::vec tvec = arma::regspace(dt, dt, stimuli.n_cols*dt+dt),
     bound;
   if (bounds == 1) {
-    bound = hyperbolic_ratio_bound(tvec, 2*a, kappa, tc);
+    bound = hyperbolic_ratio_bound(tvec, a, kappa, tc);
   } else if (bounds == 2) {
-    bound = weibull_bound(tvec, 2*a, aprime, kappa, tc);
+    bound = weibull_bound(tvec, a, aprime, kappa, tc);
   } else if (bounds == 3) {
-    bound = linear_bound(tvec, 2*a, kappa, tc);
+    bound = linear_bound(tvec, a, kappa, tc);
   } else {
-    bound = rep(a, tvec.n_elem);
+    bound = rep(a/2, tvec.n_elem);
   }
   
   // get urgency signal
@@ -109,7 +109,7 @@ List sim_pulse(int n, arma::cube stimuli, double v, double a, double t0,
 
     arma::uvec thread_trials = trial_vector.rows(thread_start, thread_end);
 
-    arma::vec x = ((2 * z - 1) * a) + sqrt(z * sz) * zrandn(n_on_thread(i)),
+    arma::vec x = ((2 * z - 1) * a/2) + sqrt(a * sz) * zrandn(n_on_thread(i)),
       v_var = arma::zeros(n_on_thread(i)),
       rt = arma::zeros(n_on_thread(i));
 
