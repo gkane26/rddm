@@ -117,6 +117,8 @@ init_diffusion_model = function(dat,
   default_pars = c("v", "a", "t0")
   start_if_include = c(sv=0.1, sz=0.1, st0=0.1, uslope=1, udelay=1, umag=1)
   
+  dat$response2 = ifelse(dat$response == 0, "lower", "upper")
+  
   super$initialize(dat,
                    model_name,
                    par_names=all_pars,

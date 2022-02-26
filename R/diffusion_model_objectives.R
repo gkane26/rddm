@@ -58,11 +58,19 @@ ddm_rtdists_nll = function(pars,
       for(j in 1:length(private$sim_cond)){
         sub_dat = sub_dat[get(private$sim_cond[j]) == this_par_matrix[i, get(private$sim_cond[j])]]
       }
-      sub_p = do.call(rtdists::ddiffusion, c(list(rt=sub_dat[,rt]), list(response=ifelse(sub_dat[,response]==0, "lower", "upper")), as.list(this_par_matrix[i,(1+length(private$sim_cond)):length(this_par_matrix)]), fixed))
+      sub_p = do.call(rtdists::ddiffusion,
+                      c(list(rt=sub_dat[,rt]),
+                        list(response=sub_dat[, response2]),
+                        as.list(this_par_matrix[i,(1+length(private$sim_cond)):length(this_par_matrix)]),
+                        fixed))
       p_response = c(p_response, sub_p)
     }
   } else {
-    p_response = do.call(rtdists::ddiffusion, c(list(rt=dat[, rt]), list(response=dat[, ifelse(response == 0, "lower", "upper")]), as.list(this_par_matrix[, (1+length(private$sim_cond)):length(this_par_matrix)]), fixed))
+    p_response = do.call(rtdists::ddiffusion,
+                         c(list(rt=dat[, rt]),
+                           list(response=dat[, response2]),
+                           as.list(this_par_matrix[, (1+length(private$sim_cond)):length(this_par_matrix)]),
+                           fixed))
   }
   
   p_response[p_response < min_p] = min_p
