@@ -196,7 +196,7 @@ init_model = function(dat,
       } else  if (class(as_function[[i]]) == "function"){
         all_args = formals(as_function[[i]])
       } else {
-        stop("as_function arguments must be a function or a list with two elements: [1] a function and [2] vector or parameter names")
+        stop("as_function arguments must be a function or a list with two elements: [1] a function and [2] matrix of parameter bounds")
       }
       
       no_default = sapply(all_args, function(x) x == "")
@@ -278,6 +278,7 @@ init_model = function(dat,
           par_transform[get(depends_on[all_pars[i]]) == j, (all_pars[i]) := length(par_values)]
         }
       }else if(all_pars[i] %in% names(as_function)){
+
         if(class(as_function[[all_pars[i]]]) == "function") {
           fun_args = formals(as_function[[all_pars[i]]])
           has_default = sapply(all_args, function(x) x != "")
@@ -297,7 +298,7 @@ init_model = function(dat,
         }
         
         par_names = c(par_names, paste(all_pars[i], fun_names, sep="_"))
-        par_corresponding = c(par_corresponding, rep(all_pars[i], length(par_names)))
+        par_corresponding = c(par_corresponding, rep(all_pars[i], length(fun_names)))
         par_values = c(par_values, fun_vals)
         par_lower = c(par_lower, fun_lower)
         par_upper = c(par_upper, fun_upper)
