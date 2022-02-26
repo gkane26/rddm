@@ -81,16 +81,16 @@ set_params = function(pars, reverse_v=T){
   self$par_values = pars
   private$par_matrix = copy(private$par_transform)
   
+  
   for(i in (1+length(private$sim_cond)):(length(private$par_transform))){
     
     this_par = names(private$par_matrix)[[i]]
     
     if (this_par %in% names(private$as_function)) {
-      
       fun_par_index = which(self$par_corresponding == this_par)
       fun_pars = stringr::str_split_fixed(self$par_names[fun_par_index], pattern="_", n=2)[,2]
       fun_pars_list = list()
-      for (fp in 1:length(fun_pars)) fun_pars_list[[fun_pars[fp]]] = self$par_values[fp]
+      for (fp in 1:length(fun_pars)) fun_pars_list[[fun_pars[fp]]] = self$par_values[fun_par_index[fp]]
       use_cols = which(names(private$par_matrix) %in% formalArgs(private$as_function[[this_par]]))
       private$par_matrix[[this_par]] = do.call(private$as_function[[this_par]], c(as.list(private$par_matrix[, ..use_cols]), fun_pars_list))
       
@@ -208,9 +208,9 @@ init_model = function(dat,
   
   ### get task conditions and rt quantiles
   
-  sort_var = c(depends_on, extra_condition, as_function_vars, "correctSide", "response")
+  sort_var = unique(c(depends_on, extra_condition, as_function_vars, "correctSide", "response"))
   setorderv(self$data, sort_var)
-  simulate_conditions = c("correctSide", unique(c(depends_on, extra_condition, as_function_vars)))
+  simulate_conditions = unique(c("correctSide", unique(c(depends_on, extra_condition, as_function_vars))))
   # self$data = self$data[rt < max_time]
   private$as_function = lapply(as_function, function(x) ifelse(class(x) == "function", x, x[[1]]))
   par_transform = unique(self$data[, ..simulate_conditions])
