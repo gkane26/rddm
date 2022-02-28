@@ -22,11 +22,12 @@ arma::rowvec pulse_trial_stimulus(arma::vec stim_seq, double dur=0.01, double is
     pulse_bins = round(dur / dt),
     stim_bins = round(isi / dt);
   
-  arma::rowvec stimulus(stim_bins*stim_seq.n_elem, arma::fill::zeros);
+  arma::rowvec stimulus(stim_bins * stim_seq.n_elem + pre_bins, arma::fill::zeros);
   
   for(unsigned int i=0; i<stim_seq.n_elem; i++){
     
-    arma::span this_pulse = arma::span(i*stim_bins+pre_bins, i*stim_bins+pre_bins+pulse_bins-1);
+    arma::span this_pulse = arma::span(i * stim_bins + pre_bins,
+                                       i * stim_bins + pre_bins + pulse_bins - 1);
     stimulus(this_pulse).fill(stim_seq(i));
     
   }
