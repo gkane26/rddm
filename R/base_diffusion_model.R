@@ -1,224 +1,435 @@
-#' Fit diffusion model (for internal use)
+#' fit diffusion model (for internal use)
 #' 
-#' @usage diffusion_model$fit()
+#' Fit parameters of the diffusion model.
+#' This function is only intended for use with a diffusion model object,
+#' and should not be called directly outside of the diffusion model class.
+#' 
+#' @usage model$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 #'
-#' @param method string; optimization method to use, see optimx method argument, default = NULL -- will use Nelder-Mead if unbounded or nlminb if bounds specified.
-#' @param save_dir string; path to directory to save results. will save results only if specified. default = NA
-#' @param base_file string; base name of file. if NA, will create name a default name: "fit_<modelName>_<subject>.Rdata"
-#' @param check_prior_fit logical; if True, will look for and load previous fit in save_dir/base_file
-#' @param refit logical; if True, if prior fit is found, will refit model starting at prior point
-#' @param transform_pars logical; if True, will use logistic transformation on parameters to ensure they don't violate bounds even if using an unbounded optimization method
 #' @param use_bounds logical; if True, perform bounded optimization
-#' @param n_cons integer; will return when n_cons number of consecutive optimization runs without finding a better solution
-#' @param tol numeric; if likelihood of current fit is within tol of last fit, considered same result
+#' @param transform_pars logical; if True, will use logistic transformation on parameters to ensure they don't violate bounds, even if using an unbounded optimization method
+#' @param n_cores integer; number of cores to use for parallel processing (for sections using the foreach package)
+#' @param ... additional arguments passed to \code{modelfitr::fit_model}
 #'
-#' @return definition of base diffusion model object
+#' @return \code{base_diffusion_model} with result saved to the field \code{solution}
 #' 
 #' @keywords internal
 #' 
-#' @import optimx
-#'
-#' @export
-fit_diffusion_model <- function(method=NULL, save_dir=NA, base_file=NA, check_prior_fit=F, refit=F,
-                                transform_pars=F, use_bounds=F, n_cons=0, max_tries=25, tol=1e-5, ...){
-  cat("\n")
+fit_diffusion_model <- function(use_bounds=FALSE, transform_pars=FALSE, n_cores=1, ...) {
   
-  if(is.null(method))
-    if(use_bounds)
-      method="nlminb"
-    else
-      method="Nelder-Mead"
+  if (n_cores <= 0) n_cores = parallel::detectCores()
+  if (n_cores == 1) {
+    if (foreach::getDoParRegistered()) {
+      foreach::registerDoSEQ()
+    }
+  } else {
+    cl = parallel::makeCluster(n_cores)
+    doParallel::registerDoParallel(cl)
+    on.exit({
+      foreach::registerDoSEQ()
+      parallel::stopCluster(cl)
+    })
+  }
+  
+  start_vals = self$start_values
+  names(start_vals) = self$par_names
+  
+  if (use_bounds) {
     
-    ### check for prior fit of model
-    ### if model exists, return if refit=F or if convergence criteria met (convergence code = 0 and kkt conditions met)
-    if(check_prior_fit){
-      try({
-        if(!is.na(save_dir)){
-          if(is.na(base_file))
-            base_file = paste0("fit", "_", self$name, "_", self$data[1,subject])
-          file_name = paste0(base_file, ".Rdata")
-          full_path = file.path(save_dir, file_name)
-          if(file.exists(full_path)){
-            saved_dm = readRDS(file=full_path)
-            if(!is.null(saved_dm$fit_info)){
-              if(!refit){
-                if(!is.null(saved_dm$fit_cons)) cons = saved_dm$fit_cons else cons = 0
-                if((!is.na(saved_dm$fit_info$kkt1)) & (!is.na(saved_dm$fit_info$kkt2))){
-                  if(((saved_dm$fit_info$convcode == 0) & (saved_dm$fit_info$kkt1) & (saved_dm$fit_info$kkt2)) | (cons >= n_cons)){
-                    cat("Model =", self$name, "// Subject =", self$data[1,subject], "already fit, good solution found! Model saved to file =", full_path, "\n\n")
-                    return()
-                  }
-                }else{
-                  if(cons >= n_cons){
-                    cat("Model =", self$name, "// Subject =", self$data[1,subject], "already fit, good solution found! Model saved to file =", full_path, "\n\n")
-                    return()
-                  }
-                }
-              }
-              self$start_values = saved_dm$fit_par
-              old_val = saved_dm$fit_obj
-            }
-          }
+    start_vals[start_vals < private$lower] = private$lower[start_vals < private$lower]
+    start_vals[start_vals > private$upper] = private$upper[start_vals > private$upper]
+    
+    self$solution = modelfitr::fit_model(self$obj,
+                                         start=start_vals,
+                                         lower=private$lower,
+                                         upper=private$upper,
+                                         aic=TRUE,
+                                         bic=TRUE,
+                                         n_obs=self$data[, .N],
+                                         ...)
+    
+  } else {
+    
+    if (transform_pars) {
+      start_vals = private$inv_logistic(start_vals)
+      start_vals[start_vals < -10] = -10
+      start_vals[start_vals > 10] = 10
+    }
+    
+    self$solution = modelfitr::fit_model(self$obj,
+                                         start=start_vals,
+                                         aic=TRUE,
+                                         bic=TRUE,
+                                         n_obs=self$data[, .N],
+                                         transform_pars=transform_pars,
+                                         ...)
+    
+    if (transform_pars) {
+      self$solution$pars = private$logistic(self$solution$pars)
+    }
+    
+  }
+  
+  private$set_params(self$solution$pars)
+  
+  invisible(self)
+  
+}
+
+
+set_params = function(pars, reverse_v=T){
+  self$par_values = pars
+  private$par_matrix = copy(private$par_transform)
+  
+  
+  for(i in (1+length(private$sim_cond)):(length(private$par_transform))){
+    
+    this_par = names(private$par_matrix)[[i]]
+    
+    if (this_par %in% names(private$as_function)) {
+      fun_par_index = which(self$par_corresponding == this_par)
+      fun_pars = stringr::str_split_fixed(self$par_names[fun_par_index], pattern="_", n=2)[,2]
+      fun_pars_list = list()
+      for (fp in 1:length(fun_pars)) fun_pars_list[[fun_pars[fp]]] = self$par_values[fun_par_index[fp]]
+      use_cols = which(names(private$par_matrix) %in% formalArgs(private$as_function[[this_par]]))
+      private$par_matrix[[this_par]] = do.call(private$as_function[[this_par]], c(as.list(private$par_matrix[, ..use_cols]), fun_pars_list))
+      
+    } else {
+      
+      private$par_matrix[[this_par]] = self$par_values[private$par_matrix[[this_par]]]
+      # private$par_matrix[[names(private$par_matrix)[[i]]]] = self$par_values[private$par_matrix[[names(private$par_matrix)[i]]]]
+      
+    }
+    
+  }
+  
+  if (reverse_v) {
+    if("v" %in% names(private$par_matrix) & !("v" %in% names(private$as_function)))
+      private$par_matrix[correctSide==0, v := -v]
+  }
+  
+}
+
+
+objective_checks = function(pars,
+                            transform_pars=F,
+                            check_constraints=T,
+                            reverse_v=T,
+                            debug=F) {
+  
+  ### check params
+  
+  if(transform_pars) {
+    pars = private$logistic(pars)
+  }
+  
+  if(debug){
+    cat("pars = ")
+    cat(round(pars, 3), sep=", ")
+    cat(" // ")
+  }
+  
+  private$set_params(pars, reverse_v=reverse_v)
+  
+  if(check_constraints){
+    pass_checks = private$check_par_constraints()
+  } else {
+    pass_checks = NA
+  }
+  
+  list(pars, pass_checks)
+  
+}
+
+
+init_model = function(dat,
+                      model_name,
+                      par_names,
+                      par_values,
+                      par_lower,
+                      par_upper,
+                      default_pars=NULL,
+                      start_if_include=NULL,
+                      include=NULL,
+                      depends_on=NULL,
+                      as_function=NULL,
+                      start_values=NULL,
+                      fixed_pars=NULL,
+                      max_time=10,
+                      extra_condition=NULL,
+                      bounds=NULL,
+                      urgency=NULL,
+                      ...){
+  
+  ### check data structure
+  
+  if(!("subject" %in% names(dat))){
+    dat$subject = NA
+  }
+  
+  if (!("correctSide" %in% names(dat))){
+    warning("\"correctSide\" not in data, setting it to 1.")
+    dat$correctSide = 1
+  }
+  
+  if ((!("response" %in% names(dat))) | (!("rt" %in% names(dat)))) {
+    stop("data must contain the columns \"response\" and \"rt\".")
+  }
+  
+  self$data=data.table::copy(data.table::setDT(dat))
+  self$name=model_name
+  
+  ### check for supplies parameters
+  
+  if (missing(par_names) | missing(par_values) | missing(par_lower) | missing(par_upper)) {
+    stop("must supply parameter names, values, lower and upper bounds.")
+  }
+  
+  ### get variables used for as_function parameters
+  
+  as_function_vars = NULL
+  if (!is.null(as_function)) {
+    for (i in 1:length(as_function)) {
+      
+      if (class(as_function[[i]]) == "list") {
+        all_args = formals(as_function[[i]][[1]])
+      } else  if (class(as_function[[i]]) == "function"){
+        all_args = formals(as_function[[i]])
+      } else {
+        stop("as_function arguments must be a function or a list with two elements: [1] a function and [2] matrix of parameter bounds")
+      }
+      
+      no_default = sapply(all_args, function(x) x == "")
+      no_default[names(no_default) == "..."] = FALSE
+      as_function_vars = c(as_function_vars, names(all_args)[no_default])
+      
+    }
+  }
+  
+  ### get task conditions and rt quantiles
+  
+  sort_var = unique(c(depends_on, extra_condition, as_function_vars, "correctSide", "response"))
+  setorderv(self$data, sort_var)
+  simulate_conditions = unique(c("correctSide", unique(c(depends_on, extra_condition, as_function_vars))))
+  # self$data = self$data[rt < max_time]
+  private$as_function = lapply(as_function, function(x) ifelse(class(x) == "function", x, x[[1]]))
+  par_transform = unique(self$data[, ..simulate_conditions])
+  if (par_transform[, .N] == self$data[, .N]) {
+    q_list = get_rt_quantiles(self$data, conditions = "correctSide", ...)
+  } else {
+    q_list = get_rt_quantiles(self$data, conditions = simulate_conditions, ...)
+  }
+  self$data_q = q_list[[1]]
+  private$p_q = q_list[[2]]
+  
+  ### set default parameter values
+  
+  all_pars = par_names
+  values = par_values
+  lower = par_lower
+  upper = par_upper
+  
+  check_default_values = names(start_if_include)
+  for (p in names(start_if_include)) {
+    if ((p %in% include) | (p %in% names(depends_on)) | (p %in% names(as_function))) values[all_pars == p] = start_if_include[p]
+  }
+  
+  ### check all supplied parameters, remove if not in all_pars
+  
+  rm_fixed = fixed_pars[!(names(fixed_pars) %in% all_pars)]
+  fixed_pars = fixed_pars[names(fixed_pars) %in% all_pars]
+  rm_include = include[!(include %in% all_pars)]
+  include = include[include %in% all_pars]
+  rm = c(rm_fixed, rm_include)
+  if(length(rm) >= 1)
+    warning("requested variables are not supported :: ", rm, sep=c("", rep(", ", length(rm)-1)))
+  
+  ### overwrite defaults with supplied starting values
+  
+  if(length(start_values) > 0)
+    for(i in 1:length(start_values)){
+      values[all_pars==names(start_values)[i]] = start_values[i]
+    }
+  
+  ### get parameters to be fit and parameters with fixed values
+  
+  default_pars = default_pars[!(default_pars %in% names(fixed_pars))]
+  include = include[!(include %in% names(fixed_pars))]
+  include = c(default_pars, include)
+  
+  if(length(depends_on) > 0)
+    setorderv(self$data, depends_on)
+  par_names = character()
+  par_corresponding = character()
+  par_values = numeric()
+  par_lower = numeric()
+  par_upper = numeric()
+  par_transform = cbind(par_transform, matrix(0,nrow=par_transform[,.N],ncol=length(include), dimnames=list(NULL,include)))
+  for(i in 1:length(all_pars)){
+    if(all_pars[i] %in% include){
+      if(all_pars[i] %in% names(depends_on)){
+        conds = self$data[, unique(get(depends_on[all_pars[i]]))]
+        for(j in conds){
+          par_names = c(par_names, paste(all_pars[i], j, sep="_"))
+          par_corresponding = c(par_corresponding, all_pars[i])
+          par_values = c(par_values, values[i])
+          par_lower = c(par_lower, lower[i])
+          par_upper = c(par_upper, upper[i])
+          par_transform[get(depends_on[all_pars[i]]) == j, (all_pars[i]) := length(par_values)]
         }
-      })
-    }
-    
-    ### create file name to save model fit (if save_dir is specified)
-    save=F
-    if(!is.na(save_dir)){
-      if(is.na(base_file))
-        base_file = paste0("fit", "_", self$name, "_", self$data[1,subject])
-      file_name = paste0(base_file, ".Rdata")
-      full_path = file.path(save_dir, file_name)
-      save=T
-    }
-    
-    ### set up fit model
-    
-    cat("Fitting Model =", self$name, "// Subject =", self$data[1,subject], "\n\n")
-    
-    if(use_bounds){
-      self$start_values[self$start_values < private$lower] = private$lower[self$start_values < private$lower]
-      self$start_values[self$start_values > private$upper] = private$upper[self$start_values > private$upper]
-    }
-    
-    convergence = F
-    it=0
-    if(!exists("cons")) cons=0
-    start = as.numeric(self$start_values)
-    if(transform_pars)
-      start = logistic_transform(start)
-    if(!exists("old_val")) old_val = Inf
-    use_method = 1
-    
-    # fit model, check for converegence
-    fit_start = as.numeric(Sys.time())
-    while(!convergence & it<max_tries){
-      
-      # model fit
-      if(use_bounds)
-        fit = optimx(start, self$obj, method=method[use_method], transform_pars=transform_pars, ...)
-      else
-        fit = optimx(start, self$obj, method=method[use_method], transform_pars=transform_pars, ...)
-      
-      if(fit$value < old_val){
-        self$fit_info = fit
-        self$fit_obj = fit$value
-        if(transform_pars)
-          self$fit_par = logistic_untransform(as.numeric(fit[1,1:length(self$par_names)]))
-        else
-          self$fit_par = as.numeric(fit[1,1:length(self$par_names)])
-        names(self$fit_par) = self$par_names
-        self$fit_aic = 2*length(self$par_names) + 2*self$fit_obj
-        self$fit_bic = log(self$data[,.N])*length(self$par_names) + 2*self$fit_obj
-      }
-      
-      if(old_val-fit$value > tol){
-        cons = 0
-        old_val = fit$value
-      }else{
-        cons = cons + 1
-      }
-      self$fit_cons = cons
-      
-      # save result
-      if(save) saveRDS(self, file=full_path)
-      
-      #check convergence
-      if((!is.na(fit$kkt1)) & (!is.na(fit$kkt2)))
-        convergence = ((fit$convcode == 0) & (fit$kkt1) & (fit$kkt2)) | (cons >= n_cons)
-      else
-        convergence = (cons >= n_cons)
-      
-      if(!convergence){
-        start = rnorm(length(self$fit_par), self$fit_par, abs(as.numeric(self$fit_par))*.05)
-        start[start>private$upper] = private$upper[start>private$upper]
-        start[start<private$lower] = private$lower[start<private$lower]
-        if(transform_pars)
-          start = logistic_transform(start)
+      }else if(all_pars[i] %in% names(as_function)){
+
+        if(class(as_function[[all_pars[i]]]) == "function") {
+          fun_args = formals(as_function[[all_pars[i]]])
+          has_default = sapply(all_args, function(x) x != "")
+          fun_args = fun_args[has_default]
+          fun_names = names(fun_args)
+          fun_vals = unname(unlist(fun_args))
+          fun_lower = rep(-Inf, length(fun_vals))
+          fun_upper = rep(Inf, length(fun_vals))
+        } else {
+          fun_args = formals(as_function[[all_pars[i]]][[1]])
+          has_default = sapply(all_args, function(x) x != "")
+          fun_args = fun_args[has_default]
+          fun_names = names(fun_args)
+          fun_vals = unname(unlist(fun_args))
+          fun_lower = as_function[[all_pars[i]]][[2]][1,]
+          fun_upper = as_function[[all_pars[i]]][[2]][2,]
+        }
         
-        # if(old_val-fit$value > tol){
-        #   start = as.numeric(fit[1,1:length(start)])
-        #   old_val = fit$value
-        # }else{
-        #   start = rnorm(length(diffusion_model$fit_par), diffusion_model$fit_par, abs(as.numeric(diffusion_model$fit_par))*.05)
-        #   start[start>private$upper] = private$upper[start>private$upper]
-        #   start[start<private$lower] = private$lower[start<private$lower]
-        #   if(transform_pars)
-        #     start = logistic_transform(start, diffusion_model$lower, diffusion_model$upper)
-        # }
+        par_names = c(par_names, paste(all_pars[i], fun_names, sep="_"))
+        par_corresponding = c(par_corresponding, rep(all_pars[i], length(fun_names)))
+        par_values = c(par_values, fun_vals)
+        par_lower = c(par_lower, fun_lower)
+        par_upper = c(par_upper, fun_upper)
+        par_transform[, all_pars[i] := NA]
+        
+      }else{
+        par_names = c(par_names, all_pars[i])
+        par_corresponding = c(par_corresponding, all_pars[i])
+        par_values = c(par_values, values[i])
+        par_lower = c(par_lower, lower[i])
+        par_upper = c(par_upper, upper[i])
+        par_transform[, (all_pars[i]) := length(par_values)]
       }
       
-      it = it + 1
-      cat("model =", self$name, "/ iteration =", it, "/ cons =", cons, "/ convergence =", convergence, "/ obj =", fit$value, "/ fit time =", as.numeric(Sys.time())-fit_start, "\n")
-      use_method = ifelse(use_method+1 <= length(method), use_method+1, 1)
-      
+    }else{
+      if(!(all_pars[i] %in% names(fixed_pars))){
+        message(paste("parameter ::", all_pars[i], "is not specified, including as fixed parameter with value =", values[i]))
+        fixed_pars = c(fixed_pars, values[i])
+        names(fixed_pars)[length(fixed_pars)] = all_pars[i]
+      }
+    }
+  }
+  
+  self$par_names=par_names
+  self$par_corresponding=par_corresponding
+  self$start_values=par_values
+  
+  private$max_time=max_time
+  private$lower=par_lower
+  private$upper=par_upper
+  private$fixed=fixed_pars
+  private$par_transform=par_transform
+  private$sim_cond=simulate_conditions
+  
+  if (is.null(bounds)) {
+    if("aprime" %in% par_corresponding) {
+      private$bounds = 2L
+    } else if (any(c("kappa", "tc") %in% par_corresponding)) {
+      private$bounds = 1L
+    } else {
+      private$bounds = 0L
+    }
+  } else {
+    if (!bounds %in% c("fixed", "hyperbolic", "weibull", "linear")) {
+      warning("specified bounds not supported, using fixed bounds.")
+      private$bounds = 0L
+    } else {
+      private$bounds = as.numeric(factor(bounds, levels=c("fixed", "hyperbolic", "weibull", "linear"))) - 1
     }
     
-    #fit_time = as.numeric(Sys.time()) - fit_start
-    #cat("model =", self$name, "done! // par =", self$fit_par, "// obj =", self$fit_obj, " // time =", fit_time, "\n")
+  }
+  
+  if (is.null(urgency)) {
+    if("umag" %in% par_corresponding) {
+      private$urgency = 2L
+    } else if (any(c("uslope", "udelay") %in% par_corresponding)) {
+      private$urgency = 1L
+    } else {
+      private$urgency = 0L
+    }
+  } else {
+    if (!(urgency %in% c("none", "linear", "logistic"))) {
+      warning("specified urgency not supported, not using urgency signal.")
+      private$urgency = 0L
+    } else {
+      private$urgency = as.numeric(factor(urgency, levels=c("none", "linear", "logistic"))) - 1
+    }
+  }
+  
 }
-
-get_aic <- function(pars=NULL, dat=NULL, ...){
-  if(is.null(pars)) pars=self$fit_par
-  if(is.null(dat)) dat=self$data
-  obj = self$obj(pars, dat, ...)
-  return(2*length(pars) + 2*obj)
-}
-
-get_bic <- function(pars=NULL, dat=NULL, ...){
-  if(is.null(pars)) pars=self$fit_par
-  if(is.null(dat)) dat=self$data
-  obj = self$obj(pars, dat, ...)
-  return(log(dat[,.N])*length(pars) + 2*obj)
-}
-
-
-#' Base diffusion model object
+#' Base Diffusion Model R6 Class
+#' 
+#' @description 
+#' 
+#' This class serves as a parent object for other diffusion models.
+#' 
+#' @details
+#' 
+#' For details for the fit diffusion model method, see \code{\link{fit_diffusion_model}}
+#' 
+#' @usage dm <- base_diffusion_model$new(data, model_name="base_dm")
+#' @usage dm$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
+#' 
+#' @param data data.frame or data.table with at least three columns: correctSide, which boundary is the correct answer; response, the response of the subject on that trial; and rt, the response time on the trial
+#' @param model_name string; arbitrary name for the model
+#' 
+#' @field name arbitrary name for model
+#' @field data data.frame or data.table with at least three columns: correctSide, which boundary is the correct answer; response, the response of the subject on that trial; and rt, the response time on the trial
+#' @field par_names the parameter names for the model
+#' @field par_corresponding which underlying diffusion model parameter does this parameter correspond to (important if as_function is used)
+#' @field par_values the current parameter values
+#' @field start_values starting parameter values (used for optimization)
+#' @field obj the objective function used for optimization
+#' @field solution information about model fit (returned from the package modelfitr). This attribute is NULL upon initiation, and is created by running the \code{fit} method
 #'
-#' @usage base_diffusion_model$new(dat, model_name)
-#'
-#' @param dat data table; contains at least 2 columns: rt - response time for trial, response - upper or lower boundary (1 or 0)
-#' @param model_name string (optional); name to identify model
-#'
-#' @return fills in the fields: fit_info, fit_obj, fit_par, fit_cons, fit_aic, fit_bic in diffusion_model object
+#' @return \code{base_diffusion_model} object
 #'
 #' @import data.table
 #' 
-#' @export
+#' @keywords internal
+#' 
 base_diffusion_model <- R6::R6Class("base_diffusion_model",
                                     public=list(
                                       name=NULL,
                                       data=NULL,
+                                      data_q=NULL,
                                       par_names=NULL,
+                                      par_corresponding=NULL,
                                       par_values=NULL,
                                       start_values=NULL,
                                       obj=NULL,
-                                      fit_info=NULL,
-                                      fit_obj=NULL,
-                                      fit_par=NULL,
-                                      fit_cons=NULL,
-                                      fit_aic=NULL,
-                                      fit_bic=NULL,
-                                      initialize=function(dat, model_name="base_dm"){
-                                        if(!("subject" %in% names(dat)))
-                                          dat$subject = NA
-                                        if (!("correctSide" %in% names(dat)))
-                                          dat$correctSide = 1
-                                        self$data=data.table::setDT(dat)
-                                        self$name=model_name
-                                      },
-                                      fit=fit_diffusion_model
-                                    ), private=list(
+                                      solution=NULL,
+                                      initialize=init_model,
+                                      fit=fit_diffusion_model,
+                                      predict=function() stop("Not Implemented!"),
+                                      simulate=function() stop("Not Implemented")
+                                    ),
+                                    private=list(
                                       lower=NULL,
                                       upper=NULL,
                                       fixed=NULL,
                                       par_transform=NULL,
                                       par_matrix=NULL,
                                       sim_cond=NULL,
-                                      use_weibull_bound=NULL,
-                                      get_aic=get_aic,
-                                      get_bic=get_bic,
-                                      logistic_untransform=function(pars) (private$upper-private$lower) / (1 + exp(-pars)) + private$lower,
-                                      logistic_transform=function(pars) -log((private$upper-private$lower)/(pars-private$lower) - 1)
+                                      p_q=NULL,
+                                      set_params=set_params,
+                                      logistic=function(x) logistic(x, private$lower, private$upper),
+                                      inv_logistic=function(x) inv_logistic(x, private$lower, private$upper),
+                                      max_time=NULL,
+                                      as_function=NULL,
+                                      bounds=NULL,
+                                      urgency=NULL,
+                                      objective_checks=objective_checks
                                     ))

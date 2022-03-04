@@ -4,16 +4,33 @@
 \alias{pulse_predict}
 \title{Get predicted behavior from pulse model}
 \usage{
-pulse_predict(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
-  sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L,
-  tc = 0L, check_pars = TRUE, dt = 0.002, dx = 0.05,
-  v_scale = 100, use_weibull_bound = FALSE, dur = 0.01, isi = 0.1,
-  n_threads = 1L)
+pulse_predict(
+  n,
+  stimuli,
+  v,
+  a,
+  t0,
+  z = 0L,
+  dc = 0L,
+  sv = 0L,
+  st0 = 0L,
+  sz = 0L,
+  s = 0L,
+  lambda = 0L,
+  aprime = 0L,
+  kappa = 0L,
+  tc = 0L,
+  check_pars = TRUE,
+  dt = 0.001,
+  dx = 0.05,
+  bounds = 0L,
+  n_threads = 1L
+)
 }
 \arguments{
 \item{n}{int; number of predicted samples to take per stimulus}
 
-\item{stim_seq}{vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
+\item{stimuli}{list; list of stimulus matrices}
 
 \item{v}{numeric; drift rate, either single value or vector for each trial}
 
@@ -22,6 +39,8 @@ pulse_predict(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
 \item{t0}{numeric; non-decision time, either single value or vector for each trial}
 
 \item{z}{numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5}
+
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
 
 \item{sv}{numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0}
 
@@ -33,7 +52,7 @@ pulse_predict(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
 
 \item{lambda}{numeric; O-U process slope, either single value or vector for each trial}
 
-\item{a_prime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
+\item{aprime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
 
 \item{kappa}{numeric; slope of collapse, either single value or vector for each trial, default = 0}
 
@@ -43,13 +62,7 @@ pulse_predict(n, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
 
 \item{dt}{numeric; time step of simulation, default = .001}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
-
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
-
-\item{dur}{numeric; duration of stimulus}
-
-\item{isi}{numeric; interstimulus interval}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds}
 
 \item{n_threads}{int; number of threads (trials) to run in parallel}
 }

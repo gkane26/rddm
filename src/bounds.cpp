@@ -1,4 +1,4 @@
-#include "RcppArmadillo.h"
+#include <RcppArmadillo.h>
 using namespace Rcpp;
 // [[Rcpp::depends(RcppArmadillo)]]
 
@@ -11,38 +11,137 @@ using namespace Rcpp;
 //' @description evaluate diffusion model boundary using the hyperbolic ratio or weibull functions
 //'
 //' @param t vector; time points to evaluate boundary
-//' @param a numeric; initial boundary
-//' @param a_prime numeric; degree of collapse (weibull only)
-//' @param kappa numeric; slope of collapse
-//' @param tc numeric; time constant of collapse
+//' @param a numeric or vector; initial boundary
+//' @param aprime numeric or vector; degree of collapse (weibull only)
+//' @param kappa numeric or vector; slope of collapse
+//' @param tc numeric or vector; time constant of collapse
 //' 
-//' @return boundary at time t
+//' @return 
+//' column vector with boundary at time t, 
+//' or a time point x parameter vector matrix of boundaries 
+//' (each column represents a time varying boundary for a given parameter set)
 //' 
 //' @name bounds
 
 //' @rdname bounds
 //' @export
 // [[Rcpp::export]]
-arma::vec hyperbolic_ratio_bound(arma::vec t, double a, double kappa=0, double tc=.25){
-  // hyperbolic ratio function for time-varying boundary
-  // t = time
-  // a = initial boundary
-  // kappa = degree of collapse
-  // tc = time constant of collapse (time at which boundary has collapsed halfway)
-  
-  return a/2 * (1 - kappa * (t/(t+tc)));
+arma::vec linear_bound(arma::vec t, double a, double kappa=0, double tc=0){
+  arma::vec t_collapse = t - tc;
+  t_collapse.clamp(0, arma::datum::inf);
+  arma::vec bound = (a / 2) - kappa * t_collapse;
+  bound.clamp(0, a/2);
+  return bound;
 }
 
 //' @rdname bounds
 //' @export
 // [[Rcpp::export]]
-arma::vec weibull_bound(arma::vec t, double a, double a_prime=0, double kappa=1, double tc=.25){
-  // weibull time-varying boundary
-  // t = time
-  // a = initial boundary
-  // a_prime = degree of collapse (0 = no collapse; 1 = full collapse)
-  // tc = time constant of collapse
-  // kappa = slope of collapse
+arma::mat linear_bound_vec(arma::vec t, arma::vec a, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true){
   
-  return a/2 - (1 - exp(-1 * arma::pow(t/tc,kappa))) * (a/2 * a_prime);
+  if (check_pars) {
+    arma::uvec lens = {a.n_elem, kappa.n_elem, tc.n_elem};
+    if (a.n_elem < lens.max()) {
+      a = arma::zeros(lens.max()) + a(0);  
+    }
+    if (kappa.n_elem < lens.max()) {
+      kappa = arma::zeros(lens.max()) + kappa(0);
+    }
+    if (tc.n_elem < lens.max()) {
+      tc = arma::zeros(lens.max()) + tc(0);
+    }
+  }
+  
+  arma::mat bmat(t.n_elem, a.n_elem);
+  for (unsigned int i=0; i < a.n_elem; i++) {
+    arma::vec t_collapse = t - tc(i);
+    t_collapse.clamp(0, arma::datum::inf);
+    bmat.col(i) = (a(i) / 2) - kappa(i) * t_collapse;
+    bmat.col(i).clamp(0, a(i) / 2);
+  }
+  
+  return bmat;
+  
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
+arma::vec hyperbolic_ratio_bound(arma::vec t, double a, double kappa=0, double tc=.25){
+  return a / 2 * (1 - kappa * (t / (t + tc)));
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
+arma::mat hyperbolic_ratio_bound_vec(arma::vec t, arma::vec a, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true){
+
+  if (check_pars) {
+    arma::uvec lens = {a.n_elem, kappa.n_elem, tc.n_elem};
+    if (a.n_elem < lens.max()) {
+      a = arma::zeros(lens.max()) + a(0);  
+    }
+    if (kappa.n_elem < lens.max()) {
+      if (kappa(0) == 0) {
+        kappa(0) = 1;
+      }
+      kappa = arma::zeros(lens.max()) + kappa(0);
+    }
+    if (tc.n_elem < lens.max()) {
+      if (tc(0) == 0) {
+        tc(0) = 0.25;
+      }
+      tc = arma::zeros(lens.max()) + tc(0);
+    }
+  }
+  
+  arma::mat bmat(t.n_elem, a.n_elem);
+  for (unsigned int i=0; i < a.n_elem; i++) {
+    bmat.col(i) = a(i) / 2 * (1 - kappa(i) * (t / (t + tc(i))));
+  }
+
+  return bmat;
+
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
+arma::vec weibull_bound(arma::vec t, double a, double aprime=0, double kappa=1, double tc=.25){
+  return a/2 - (1 - exp(-1 * arma::pow(t/tc,kappa))) * (a/2 * aprime);
+}
+
+//' @rdname bounds
+//' @export
+// [[Rcpp::export]]
+arma::mat weibull_bound_vec(arma::vec t, arma::vec a, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true){
+
+  if (check_pars) {
+    arma::uvec lens = {a.n_elem, aprime.n_elem, kappa.n_elem, tc.n_elem};
+    if (a.n_elem < lens.max()) {
+      a = arma::zeros(lens.max()) + a(0);  
+    }
+    if (aprime.n_elem < lens.max()) {
+      aprime = arma::zeros(lens.max()) + aprime(0);
+    }
+    if (kappa.n_elem < lens.max()) {
+      if (kappa(0) == 0) {
+        kappa(0) = 1;
+      }
+      kappa = arma::zeros(lens.max()) + kappa(0);
+    }
+    if (tc.n_elem < lens.max()) {
+      if (tc(0) == 0) {
+        tc(0) = 0.25;
+      }
+      tc = arma::zeros(lens.max()) + tc(0);
+    }
+  }
+  
+  arma::mat bmat(t.n_elem, a.n_elem);
+  for (unsigned int i=0; i < a.n_elem; i++) {
+    bmat.col(i) = a(i) / 2 - (1 - exp(-1 * arma::pow(t / tc(i), kappa(i)))) * (a(i) / 2 * aprime(i));
+  }
+
+  return bmat;
 }

@@ -4,16 +4,39 @@
 \alias{pulse_nll}
 \title{Get pulse model negative log likelihood for a set of trials}
 \usage{
-pulse_nll(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
-  sz = 0L, s = 0L, lambda = 0L, a_prime = 0L, kappa = 0L,
-  tc = 0L, check_pars = TRUE, dt = 0.002, dx = 0.05,
-  v_scale = 100, use_weibull_bound = FALSE, dur = 0.01, isi = 0.1,
-  n_threads = 1L)
+pulse_nll(
+  choices,
+  rt,
+  stimuli,
+  v,
+  a,
+  t0,
+  z = 0L,
+  dc = 0L,
+  sv = 0L,
+  st0 = 0L,
+  sz = 0L,
+  lambda = 0L,
+  aprime = 0L,
+  kappa = 0L,
+  tc = 0L,
+  uslope = 0L,
+  umag = 0L,
+  udelay = 0L,
+  s = 0L,
+  check_pars = TRUE,
+  v_scale = 1,
+  dt = 0.001,
+  xbins = 200L,
+  bounds = 0L,
+  urgency = 0L,
+  n_threads = 1L
+)
 }
 \arguments{
 \item{rt}{numeric; vector of response times}
 
-\item{stim_seq}{vector of strings; vector of stimulus sequence for all trials, each element should be a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
+\item{stimuli}{array; 2 x timepoints x trials array of pulse stimuli}
 
 \item{v}{numeric; drift rate, either single value or vector for each trial}
 
@@ -23,39 +46,49 @@ pulse_nll(choices, rt, stim_seq, v, a, t0, z = 0L, sv = 0L, st0 = 0L,
 
 \item{z}{numeric; starting point, , either single value or vector for each trial, 0 < z < 1, default = .5}
 
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
+
 \item{sv}{numeric; standard deviation of variability in drift rate, either single value or vector for each trial, sv >= 0, default = 0}
 
 \item{st0}{numeric; variability in non-decision time, either single value or vector for each trial. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point, either single value or vector for each trial. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
-
-\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial, default = 1}
+\item{sz}{numeric; variability in starting point (percentage of boundary a), either single value or vector for each trial. Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0}
 
 \item{lambda}{numeric; O-U process slope, either single value or vector for each trial}
 
-\item{a_prime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
+\item{aprime}{numeric; degree of collapse, either single value or vector for each trial, default = 0}
 
 \item{kappa}{numeric; slope of collapse, either single value or vector for each trial, default = 0}
 
 \item{tc}{numeric; time constant of collapse, either single value or vector for each trial, default = .25}
 
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
+
+\item{s}{numeric; standard deviation in wiener diffusion noise, either single value or vector for each trial}
+
 \item{check_pars}{logical; if True, check that parameters are vectors of the same length as choices and rts. Must be true if providing scalar parameters. default = true}
+
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
 
 \item{dt}{numeric; time step of simulation, default = .002}
 
-\item{dx}{numeric; size of evidence bins, default = .05}
+\item{xbins}{integer; number of evidence bins, default = 100}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
 
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
-
-\item{dur}{numeric; duration of stimulus}
-
-\item{isi}{numeric; interstimulus interval}
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
 
 \item{n_threads}{int; number of threads (trials) to run in parallel}
 
 \item{choice}{integer; vector of decisions, 0 for lower boundary, 1 for upper}
+
+\item{up_sequence}{vector of strings; string of 0s, and 1s of stimulus values (0 no evidence, 1 to upper). If down_sequence not specified, (0 to lower, 1 to upper).}
+
+\item{down_sequence}{vector of strings; string of 0s, and 1s of stimulus values (0 is no evidence, 1 to lower). If not specified, up_sequence is (0 to lower, 1 to upper)}
 }
 \value{
 negative log likelihood of all choices and rts given pulse model parameters

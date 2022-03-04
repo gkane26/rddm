@@ -4,17 +4,39 @@
 \alias{pulse_trial_lik}
 \title{Get pulse model likelihood for a given trial}
 \usage{
-pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0,
-  st0 = 0, sz = 0, s = 1, lambda = 0, a_prime = 0, kappa = 0,
-  tc = 0.25, dt = 0.002, dx = 0.05, v_scale = 100,
-  use_weibull_bound = FALSE, dur = 0.01, isi = 0.1)
+pulse_trial_lik(
+  choice,
+  rt,
+  stimulus,
+  v,
+  a,
+  t0,
+  z = 0.5,
+  dc = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  lambda = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  uslope = 0,
+  umag = 0,
+  udelay = 0,
+  s = 1,
+  v_scale = 1,
+  dt = 0.001,
+  xbins = 200L,
+  bounds = 0L,
+  urgency = 0L
+)
 }
 \arguments{
 \item{choice}{int; decision on trial, 0 for lower boundary, 1 for upper}
 
 \item{rt}{numeric; response time on trial}
 
-\item{stim_seq}{string; stimulus sequence for trial, a string of 0s and 1s (0 for evidence to lower, 1 for evidence to upper)}
+\item{stimulus}{matrix; stimulus to simulate (row 1 is evidence to upper boundary, row 2 to lower boundary)}
 
 \item{v}{numeric; drift rate}
 
@@ -24,33 +46,39 @@ pulse_trial_lik(choice, rt, stim_seq, v, a, t0, z = 0, sv = 0,
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
+
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
-
-\item{s}{numeric; standard deviation in wiener diffusion noise, default = 1}
+\item{sz}{numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0}
 
 \item{lambda}{numeric; O-U process slope}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 0}
 
 \item{tc}{numeric; time constant of collapse, default = .25}
 
-\item{dt}{numeric; time step of simulation, default = .002}
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
 
-\item{dx}{numeric; size of evidence bins, default = .05}
+\item{umag}{numeric; urgency magnitude, default = 0;}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
+\item{udelay}{numeric; urgency delay, default = 0;}
 
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
+\item{s}{numeric; standard deviation in wiener diffusion noise}
 
-\item{dur}{numeric; duration of stimulus}
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
 
-\item{isi}{numeric; interstimulus interval}
+\item{dt}{numeric; time step of simulation, default = .001}
+
+\item{xbins}{numeric; number of evidence bins, default = 100}
+
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
+
+\item{urgency}{int; 0 for none, 1 for linear, 2 for logistic}
 }
 \value{
 probability of choice and rt for trial given pulse model parameters

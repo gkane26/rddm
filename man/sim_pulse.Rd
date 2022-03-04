@@ -2,17 +2,40 @@
 % Please edit documentation in R/RcppExports.R
 \name{sim_pulse}
 \alias{sim_pulse}
-\title{Simulate drift diffusion model with fixed or collapsing boundary}
+\title{Simulate pulse diffusion model with fixed or collapsing boundary}
 \usage{
-sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
-  s = 1, lambda = 0, a_prime = 0, kappa = 0, tc = 0.25,
-  dt = 0.001, v_scale = 100, use_weibull_bound = FALSE,
-  n_threads = 1L)
+sim_pulse(
+  n,
+  stimuli,
+  v,
+  a,
+  t0,
+  z = 0.5,
+  dc = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  lambda = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  uslope = 0,
+  umag = 0,
+  udelay = 0,
+  s = 1,
+  v_scale = 1,
+  dt = 0.001,
+  bounds = 0L,
+  urgency = 0L,
+  n_threads = 1L,
+  return_accu = FALSE,
+  seed = -1L
+)
 }
 \arguments{
 \item{n}{integer; number of decisions to simulate}
 
-\item{stimulus}{integer vector; stimulus to simulate (1 for evidence to upper boundary, -1 to lower boundary, 0 for no evidence)}
+\item{stimuli}{cube; stimuli to simulate, 2 rows X timepoints x trials.}
 
 \item{v}{numeric; drift rate}
 
@@ -22,33 +45,47 @@ sim_pulse(n, stimulus, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
+\item{dc}{numeric; drift criterion, upper drift = v, lower drift = v-d}
+
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
-
-\item{s}{numeric; standard deviation in wiener diffusion noise, default = 1}
+\item{sz}{numeric; variability in starting point (percentage of boundary a). Normal with mean=z and sd = a*sz. 0 < sz < 1, default = 0}
 
 \item{lambda}{numeric; O-U process slope}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 1}
 
 \item{tc}{numeric; time constant of collapse, default = .25}
 
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
+
+\item{s}{numeric; standard deviation in wiener diffusion noise}
+
+\item{v_scale}{numeric; scale for the drift rate. drift rate v and variability sv are multiplied by this number}
+
 \item{dt}{numeric; time step of simulation, default = .001}
 
-\item{v_scale}{numeric; scale drift rate to be similar to boundary separation a, default = 100}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
 
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
 
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
+
+\item{return_accu}{bool; if True, return full trajectory of accumulators}
+
+\item{seed}{int; set random seed (for zrandn)}
 }
 \value{
-data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence
+List containing 1) data frame with three columns: response (1 for upper boundary, 0 for lower), response time, and evidence and 2) matrix with full accumulator trajectories
 }
 \description{
-Simulate drift diffusion model with fixed or collapsing boundary
+Simulate pulse diffusion model with fixed or collapsing boundary
 }

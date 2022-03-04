@@ -2,11 +2,33 @@
 % Please edit documentation in R/RcppExports.R
 \name{sim_ddm}
 \alias{sim_ddm}
-\title{Simulate drift diffusion model with fixed or collapsing boundary}
+\title{Simulate drift diffusion model with fixed or collapsing boundary, with or without urgency}
 \usage{
-sim_ddm(n, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
-  a_prime = 0, kappa = 0, tc = 0.25, s = 1, dt = 0.001,
-  max_time = 10, use_weibull_bound = FALSE, n_threads = 1L)
+sim_ddm(
+  n,
+  v,
+  a,
+  t0,
+  z = 0.5,
+  dc = 0,
+  sv = 0,
+  st0 = 0,
+  sz = 0,
+  aprime = 0,
+  kappa = 0,
+  tc = 0.25,
+  uslope = 0,
+  umag = 0,
+  udelay = 0,
+  s = 1,
+  dt = 0.001,
+  max_time = 10,
+  bounds = 0L,
+  urgency = 0L,
+  n_threads = 1L,
+  return_accu = FALSE,
+  seed = -1L
+)
 }
 \arguments{
 \item{n}{integer; number of decisions to simulate}
@@ -19,17 +41,25 @@ sim_ddm(n, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 
 \item{z}{numeric; starting point, 0 < z < 1, default = .5}
 
+\item{dc}{numeric; drift criterion, the zero point of the drift rate (the drift rate v = v + dc); default = 0}
+
 \item{sv}{numeric; standard deviation of variability in drift rate, sv >= 0, default = 0}
 
 \item{st0}{numeric; variability in non-decision time. Uniform from [t0-st0/2, t0+st0/2], 0 < st0 < t0, default = 0}
 
-\item{sz}{numeric; variability in starting point. Uniform from [z-sz/2, z+sz/2], 0 < sz < z, default = 0}
+\item{sz}{numeric; variability in starting point (percentage of boundary a). Uniform from [z-sz/2, z+sz/2], 0 < sz < 1, default = 0}
 
-\item{a_prime}{numeric; degree of collapse, default = 0}
+\item{aprime}{numeric; degree of collapse, default = 0}
 
 \item{kappa}{numeric; slope of collapse, default = 0}
 
 \item{tc}{numeric; time constant of collapse, default = .25}
+
+\item{uslope}{numeric; urgency scaling factor, default = 0;}
+
+\item{umag}{numeric; urgency magnitude, default = 0;}
+
+\item{udelay}{numeric; urgency delay, default = 0;}
 
 \item{s}{numeric; standard deviation in wiener diffusion noise, default = 1}
 
@@ -37,13 +67,19 @@ sim_ddm(n, v, a, t0, z = 0.5, sv = 0, st0 = 0, sz = 0,
 
 \item{max_time}{numeric; max time of simulation, default = 10}
 
-\item{use_weibull_bound}{logical; if True, use weibull function for collapsing bounds, if False, use hyperbolic ratio function}
+\item{bounds}{int: 0 for fixed, 1 for hyperbolic ratio collapsing bounds, 2 for weibull collapsing bounds, 3 for linear}
+
+\item{urgency}{int: 0 for none, 1 for linear, 2 for logistic}
 
 \item{n_threads}{integer; number of threads to run in parallel, default = 1}
+
+\item{return_accu}{bool; if True, return full trajectory of accumulators}
+
+\item{seed}{integer; set random seed}
 }
 \value{
 data frame with two columns: response (1 for upper boundary, 0 for lower), and response time
 }
 \description{
-Simulate drift diffusion model with fixed or collapsing boundary
+Simulate drift diffusion model with fixed or collapsing boundary, with or without urgency
 }

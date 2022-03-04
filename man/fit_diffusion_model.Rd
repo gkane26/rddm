@@ -2,33 +2,25 @@
 % Please edit documentation in R/base_diffusion_model.R
 \name{fit_diffusion_model}
 \alias{fit_diffusion_model}
-\title{Fit diffusion model (for internal use)}
+\title{fit diffusion model (for internal use)}
 \usage{
-diffusion_model$fit()
+model$fit(use_bounds=TRUE, transform_pars=FALSE, ...)
 }
 \arguments{
-\item{method}{string; optimization method to use, see optimx method argument, default = NULL -- will use Nelder-Mead if unbounded or nlminb if bounds specified.}
-
-\item{save_dir}{string; path to directory to save results. will save results only if specified. default = NA}
-
-\item{base_file}{string; base name of file. if NA, will create name a default name: "fit_<modelName>_<subject>.Rdata"}
-
-\item{check_prior_fit}{logical; if True, will look for and load previous fit in save_dir/base_file}
-
-\item{refit}{logical; if True, if prior fit is found, will refit model starting at prior point}
-
-\item{transform_pars}{logical; if True, will use logistic transformation on parameters to ensure they don't violate bounds even if using an unbounded optimization method}
-
 \item{use_bounds}{logical; if True, perform bounded optimization}
 
-\item{n_cons}{integer; will return when n_cons number of consecutive optimization runs without finding a better solution}
+\item{transform_pars}{logical; if True, will use logistic transformation on parameters to ensure they don't violate bounds, even if using an unbounded optimization method}
 
-\item{tol}{numeric; if likelihood of current fit is within tol of last fit, considered same result}
+\item{n_cores}{integer; number of cores to use for parallel processing (for sections using the foreach package)}
+
+\item{...}{additional arguments passed to \code{modelfitr::fit_model}}
 }
 \value{
-definition of base diffusion model object
+\code{base_diffusion_model} with result saved to the field \code{solution}
 }
 \description{
-Fit diffusion model (for internal use)
+Fit parameters of the diffusion model.
+This function is only intended for use with a diffusion model object,
+and should not be called directly outside of the diffusion model class.
 }
 \keyword{internal}

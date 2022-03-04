@@ -7,14 +7,25 @@ Author: Gary Kane
 Maintainer: Gary Kane <gkane@alumni.princeton.edu>
 Description: Pure DDM and extended DDM (Bogacz et al., 2006) using rtdist package    Collapsing bounds (Voskuilen et al., 2016)    Pulse diffusion model (see Brunton et al., 2013)
 License: GPL-3
-Imports: 
+Imports:
     Rcpp,
     R6,
     rtdists,
     data.table,
-    optimx
+    modelfitr,
+    parallel,
+    foreach,
+    doParallel,
+    stringr,
+    dqrng
+Remotes:
+    github::gkane26/modelfitr,
+    github::gkane26/RcppZiggurat@interfaces
 LinkingTo:
     Rcpp,
-    RcppArmadillo
-RoxygenNote: 6.1.1
+    RcppArmadillo,
+    RcppZiggurat,
+    dqrng
+RoxygenNote: 7.1.1
 Encoding: UTF-8
+Roxygen: list(r6 = FALSE)

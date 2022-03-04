@@ -2,27 +2,41 @@
 % Please edit documentation in R/RcppExports.R
 \name{bounds}
 \alias{bounds}
+\alias{linear_bound}
+\alias{linear_bound_vec}
 \alias{hyperbolic_ratio_bound}
+\alias{hyperbolic_ratio_bound_vec}
 \alias{weibull_bound}
+\alias{weibull_bound_vec}
 \title{Collapsing boundary functions}
 \usage{
+linear_bound(t, a, kappa = 0, tc = 0)
+
+linear_bound_vec(t, a, kappa = 0L, tc = 0L, check_pars = TRUE)
+
 hyperbolic_ratio_bound(t, a, kappa = 0, tc = 0.25)
 
-weibull_bound(t, a, a_prime = 0, kappa = 1, tc = 0.25)
+hyperbolic_ratio_bound_vec(t, a, kappa = 0L, tc = 0L, check_pars = TRUE)
+
+weibull_bound(t, a, aprime = 0, kappa = 1, tc = 0.25)
+
+weibull_bound_vec(t, a, aprime = 0L, kappa = 0L, tc = 0L, check_pars = TRUE)
 }
 \arguments{
 \item{t}{vector; time points to evaluate boundary}
 
-\item{a}{numeric; initial boundary}
+\item{a}{numeric or vector; initial boundary}
 
-\item{kappa}{numeric; slope of collapse}
+\item{kappa}{numeric or vector; slope of collapse}
 
-\item{tc}{numeric; time constant of collapse}
+\item{tc}{numeric or vector; time constant of collapse}
 
-\item{a_prime}{numeric; degree of collapse (weibull only)}
+\item{aprime}{numeric or vector; degree of collapse (weibull only)}
 }
 \value{
-boundary at time t
+column vector with boundary at time t, 
+or a time point x parameter vector matrix of boundaries 
+(each column represents a time varying boundary for a given parameter set)
 }
 \description{
 evaluate diffusion model boundary using the hyperbolic ratio or weibull functions
