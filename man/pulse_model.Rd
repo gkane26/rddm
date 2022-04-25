@@ -46,6 +46,8 @@ pm$simulate(n, stimuli, par_values, par_names=NULL, ...)
 \item{bounds}{string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions}
 
 \item{objective}{character; "fp" for fokker-planck simulation, "chisq" for euler simluaton with chisq metric, "qmpe" for euler simultion with qmpe metric}
+
+\item{verbose}{logical: If TRUE, print messages related to model initation. Default = TRUE}
 }
 \value{
 definition of pulse diffusion model object

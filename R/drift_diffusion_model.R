@@ -91,6 +91,7 @@ init_diffusion_model = function(dat,
                                 urgency=NULL,
                                 objective=NULL,
                                 max_time=10,
+                                verbose=TRUE,
                                 ...){
   
   # set default parameter values
@@ -136,6 +137,7 @@ init_diffusion_model = function(dat,
                    extra_condition=extra_condition,
                    bounds=bounds,
                    urgency=urgency,
+                   verbose=verbose,
                    ...)
   
   self$set_objective(objective)
@@ -405,6 +407,7 @@ simulate_diffusion_model = function(n=10000, pars=NULL, ...) {
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
 #' @param bounds string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions
 #' @param objective character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, "chisquare" to use the difference in chisq from actual vs. simulated response times, or "qmpe" to use the quantile maximum product estimation method (comparing simulated vs. actual RT distribution) from Brown & Heathcote
+#' @param verbose logical: If TRUE, print messages related to model initation. Default = TRUE
 #' @param ... additional arguments passed to the objective function
 #'
 #' @field name arbitrary name for model
