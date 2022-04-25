@@ -321,7 +321,7 @@ set_pdm_objective <- function(objective="chisq") {
 predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, trial_code=NULL, ...){
   
   if (is.null(stim_list) | (length(stim_list) != private$par_transform[, .N])) {
-    stop("Must provide a stimulus array for each condition, stored as a list.")
+    stim_list = private$stim_list
   }
   
   if(is.null(pars)) {
@@ -330,7 +330,7 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
     }
     pars = self$solution$pars
   }
-  private$set_params(pars)
+  private$set_params(pars, reverse_v=F)
   
   ### loop through conditions
   
@@ -364,19 +364,19 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
         this_par_values = as.numeric(this_par_list)
         this_par_names = names(this_par_list)
         
-        this_sim = self$simulate(n,
-                                 stim_list[[i]],
-                                 this_par_values,
-                                 par_names=this_par_names,
-                                 bounds=private$bounds,
-                                 ...)
-        d_pred = rbind(d_pred, setDT(this_sim$behavior))
-        
+        this_sim = setDT(self$simulate(n,
+                                       stimuli=stim_list[[i]],
+                                       this_par_values,
+                                       ...)$behavior)
       } else {
         
         stop("method not implemented")
         
       }
+      
+      d_pred = rbind(d_pred,
+                     data.table(private$par_matrix[i, 1:length(private$sim_cond)],
+                                this_sim))
       
     }
     
@@ -389,7 +389,7 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
 
 #' simulate pulse model  (for internal use)
 #' 
-#' simulate pulse DDM with given model parameters..
+#' simulate pulse DDM with given stimulus and model parameters..
 #' This function is only intended for use with a pulse model object,
 #' and should not be called directly outside of the pulse model class.
 #' Please use \code{sim_pulse} as a standalone function.
@@ -398,52 +398,31 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
 #'
 #' @param n integer; number of decisions to simulate per stimulus
 #' @param pars numeric vector; vector of parameters
+#' @param par_names character vector; vector of parameter names. If pars is not named list, must supply parameter name vector!
 #' @param ... additional arguments passed to \code{sim_pulse}
 #'
 #' @return data.table with simulation conditions, decision (upper or lower boundary) and response time
 #' 
 #' @keywords internal
 #' 
-simulate_pulse_model = function(n=1, pars=NULL, ...) {
+simulate_pulse_model = function(n, stimuli, pars, ...) {
   
-  if(is.null(pars)) {
-    if (is.null(self$par_values)) {
-      pars = self$start_values
-    } else {
-      pars = self$par_values
-    }
+  if (length(pars) != length(self$par_names)) {
+    stop("supplied parameter vector must be the same length as the number of parameters in the model")
   }
   
-  private$set_params(pars)
+  names(pars) = self$par_names
   
-  pars_only_mat = copy(private$par_matrix)
-  pars_only_mat = pars_only_mat[, -(1:(length(private$sim_cond)))]
+  if (is.null(stimuli) | class(stimuli) != "array") stop("Must provide stimuli as a 3-d array (2 x timepoint x trials)")
   
-  all_sim = data.table()
   
-  for (i in 1:private$par_transform[, .N]) {
-    
-    # get conditions
-    this_sim = private$par_transform[i, 1:length(private$sim_cond)]
-    
-    
-    # simulate trials
-    par_list = as.list(pars_only_mat[i])
-    this_sim = data.table(this_sim,
-                          do.call(sim_pulse, c(n=n,
-                                               list(stimuli=stimuli[[i]]),
-                                               par_list,
-                                               private$fixed,
-                                               v_scale=private$v_scale,
-                                               bounds=private$bounds,
-                                               urgency=private$urgency,
-                                               ...))$behavior)
-    
-    all_sim = rbind(all_sim, this_sim)
-    
-  }
-  
-  all_sim
+  do.call(sim_pulse, c(n=n,
+                       list(stimuli=stimuli),
+                       as.list(pars),
+                       v_scale=private$v_scale,
+                       bounds=private$bounds,
+                       urgency=private$urgency,
+                       ...))
   
 }
 
@@ -467,6 +446,7 @@ init_pulse_model = function(dat,
                             urgency=NULL,
                             objective="chisq",
                             max_time=10,
+                            verbose=TRUE,
                             ...){
   
   if (is.null(stim_var)) {
@@ -521,6 +501,7 @@ init_pulse_model = function(dat,
                    extra_condition=extra_condition,
                    bounds=bounds,
                    urgency=urgency,
+                   verbose=verbose,
                    ...)
   
   private$v_scale = v_scale
@@ -593,6 +574,8 @@ init_pulse_model = function(dat,
 #' @param extra_condition character; vector of task condition names. Will calculate first passage times for each condition. Recommended only when comparing a model without depends_on with a model that contains a depends_on parameter.
 #' @param bounds string: either "fixed" for fixed bounds, or "weibull" or "hyperbolic" for collapsing bounds according to weibull or hyperbolic ratio functions
 #' @param objective character; "fp" for fokker-planck simulation, "chisq" for euler simluaton with chisq metric, "qmpe" for euler simultion with qmpe metric
+#' @param verbose logical: If TRUE, print messages related to model initation. Default = TRUE
+
 #'
 #' @return definition of pulse diffusion model object
 #'

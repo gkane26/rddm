@@ -12,12 +12,14 @@ model$simulate(n, stimuli, par_values, par_names=NULL, ...)
 \item{pars}{numeric vector; vector of parameters}
 
 \item{...}{additional arguments passed to \code{sim_pulse}}
+
+\item{par_names}{character vector; vector of parameter names. If pars is not named list, must supply parameter name vector!}
 }
 \value{
 data.table with simulation conditions, decision (upper or lower boundary) and response time
 }
 \description{
-simulate pulse DDM with given model parameters..
+simulate pulse DDM with given stimulus and model parameters..
 This function is only intended for use with a pulse model object,
 and should not be called directly outside of the pulse model class.
 Please use \code{sim_pulse} as a standalone function.
