@@ -159,6 +159,7 @@ init_model = function(dat,
                       extra_condition=NULL,
                       bounds=NULL,
                       urgency=NULL,
+                      verbose=TRUE,
                       ...){
   
   ### check data structure
@@ -278,7 +279,7 @@ init_model = function(dat,
           par_transform[get(depends_on[all_pars[i]]) == j, (all_pars[i]) := length(par_values)]
         }
       }else if(all_pars[i] %in% names(as_function)){
-
+        
         if(class(as_function[[all_pars[i]]]) == "function") {
           fun_args = formals(as_function[[all_pars[i]]])
           has_default = sapply(all_args, function(x) x != "")
@@ -315,7 +316,9 @@ init_model = function(dat,
       
     }else{
       if(!(all_pars[i] %in% names(fixed_pars))){
-        message(paste("parameter ::", all_pars[i], "is not specified, including as fixed parameter with value =", values[i]))
+        if(verbose) {
+          message(paste("parameter ::", all_pars[i], "is not specified, including as fixed parameter with value =", values[i]))
+        }
         fixed_pars = c(fixed_pars, values[i])
         names(fixed_pars)[length(fixed_pars)] = all_pars[i]
       }

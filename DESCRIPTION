@@ -29,3 +29,7 @@ LinkingTo:
 RoxygenNote: 7.1.1
 Encoding: UTF-8
 Roxygen: list(r6 = FALSE)
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr

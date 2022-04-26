@@ -1,0 +1,119 @@
+---
+title: "Getting Started with rddm"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with rdmm}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+*****
+
+The goal of rddm is to provide a user-friendly syntax to work with diffusion models of decision-making.
+rddm is centered around two models: the drift diffusion model (DDM; e.g., Ratcliff et al., 1978, Bogacz et al., 2006)
+and the pulse diffusion model. 
+
+* Drift Diffusion Model and it's variants:
+  + Pure DDM: using only drift rate, boundary, non-decision time, and starting point)
+  + Extended DDM: The pure DDM + trial-to-trial variabliity in the drift rate, non-decision time, and starting point
+  + Collapsing Bounds: the bounds collapse over time according to a linear, hyperbolic ratio, or weibull function
+  + Urgency Signal: a linear or logistic urgency signal
+<br>
+<br>
+* Pulse Diffusion Model: an extension of the DDM that considers moment-by-moment, time-varying evidence, 
+such as a train of pulses of sound or light. This model is adapted from Brunton et. al., 2013.
+As implemented here, the pulse diffusion model is the exact same weiner diffusion process as the DDM, 
+but the drift is a function of the momentary stimulus or evidence towards the upper and lower boundary.
+Important notes:
+  + This model uses the same parameter convention as the DDM, with three exceptions.
+  Trial-to-trial variabliity in the drift rate is replaced with moment-to-moment variability in the drift rate.
+  Trial-to-trial variability in the starting point uses a normal distribution, whereas it is uniform in the DDM.
+  + This is actually an OU-process, not just an weiner diffusion process. There is an additional parameter, labmda. 
+  For lambda = 0, this model is equal to a weiner diffusion process, but for lambda != 0, it is an OU-process.
+  + This model offers the same collapsing bounds and urgency paramters as the DDM, but it is not recommended to use 
+  these parameters if you are also using allowing lambda to vary.
+  
+  
+*****
+
+## Drift Diffusion Model
+
+The drift diffusion model requires three main parameters:
+
+* v: the drift rate
+* a: boundary separation (the distance between the two boundaries)
+* t0: non-decision time (in seconds)
+
+Optional parameters include:
+
+* z: starting point (between 0-1, z = 0.5 is the mid point)
+* sv: trial-to-trial variability in the drift rate, v ~ N(v, sv))
+* sz: trial-to-trial variability in the starting point, z ~ U(z-sz/2, z+sz/2)
+* st0: trial-to-trial variability in the non-decision time, t0 ~ U(t0-st0/2, t0+st0/2)
+
+Other parameters may be included to implement collapsing bounds or an urgency signal. These parameters will only take effect if the `bounds` or `urgency` is set (please see `help(diffusion_model)`):
+
+* a_prime: the degree of boundary collapse
+* tc: the time course of boundary collapse
+* kappa: the slope of boundary collapse
+* uslope: the slope of the urgency signal
+* umag: the magnitude of the urgency signal
+* udelay: the delay before the urgency signal begins to increase
+
+#### 1. Simulate some data
+```{r setup}
+library(rddm)
+
+ddm_simulation = sim_ddm(n = 10000,
+                         v = 1,
+                         a = 2,
+                         t0 = 0.3,
+                         z = 0.5)
+
+print(head(ddm_simulation$behavior))
+
+```
+
+#### 2. Instantiate a model
+
+Data for the diffusion model must have the following two columns:
+
+* response (0 for lower, 1 for upper boundary)
+* rt (in seconds)
+
+This is sufficient if the upper boundary is always the correct answer. If sometimes the lower boundary is the correct answer, please include a third column:
+
+* correctSide (0 for lower, 1 for upper boundary)
+
+
+```{r ddm_simulate}
+ddm_simulation$behavior$correctSide = 1
+
+ddm = diffusion_model$new(ddm_simulation$behavior, # your data
+                          model_name = "my_ddm",
+                          include = c("z"), # specify optional parameters using the include argument
+                          verbose = TRUE) # set to FALSE to ignore the benign messages
+```
+
+#### 3. Fit the model to data
+
+For options, please see `help(fit_diffusion_model)`. Many arguments to alter the fitting method are passed on to `modelfitr::fit_model`. Please see `help(fit_model)` for more information on all the package and methods available.
+```{r ddm_instantiate}
+ddm$fit(method="Nelder-Mead")
+```
+
+#### 4. Evaluate model fit
+```{r ddm_evaluate}
+# Examine parameters and model fit metrics
+print(ddm$solution)
+
+# Generate model-predicted behavior
+model_predictions = ddm$predict()
+print(head(model_predictions))

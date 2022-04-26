@@ -37,6 +37,8 @@ dm$simulate(n, par_values)
 
 \item{objective}{character: "rtdists" to use the rtdists package (pure and extended ddm only, will not work with collapsing bounds), "integral" to use the integral method from Voskuilen et al., 2016, "chisquare" to use the difference in chisq from actual vs. simulated response times, or "qmpe" to use the quantile maximum product estimation method (comparing simulated vs. actual RT distribution) from Brown & Heathcote}
 
+\item{verbose}{logical: If TRUE, print messages related to model initation. Default = TRUE}
+
 \item{...}{additional arguments passed to the objective function}
 }
 \value{
