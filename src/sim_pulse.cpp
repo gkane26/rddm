@@ -1,5 +1,8 @@
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
+
 #include <RcppArmadillo.h>
-#include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
 #include "fast_rand.h"

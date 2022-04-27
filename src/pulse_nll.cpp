@@ -1,7 +1,10 @@
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
+
 #include <RcppArmadillo.h>
 #include <RcppArmadilloExtensions/sample.h>
 #include <unistd.h>
-#include <omp.h>
 #include "bounds.h"
 #include "urgency.h"
 using namespace Rcpp;
@@ -252,9 +255,7 @@ double pulse_nll(arma::vec choices, arma::vec rt, arma::cube stimuli,
                  arma::vec uslope=0, arma::vec umag=0, arma::vec udelay=0, arma::vec s=0,
                  bool check_pars=true, double v_scale=1, double dt=.001, int xbins=200,
                  int bounds=0, int urgency=0, int n_threads=1){
-  
-  omp_set_num_threads(n_threads);
-  
+
   // check parameter vectors
   if(check_pars){
     s(arma::find(s==0)).fill(1);

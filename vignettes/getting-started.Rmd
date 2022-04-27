@@ -13,33 +13,6 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
-
-*****
-
-The goal of rddm is to provide a user-friendly syntax to work with diffusion models of decision-making.
-rddm is centered around two models: the drift diffusion model (DDM; e.g., Ratcliff et al., 1978, Bogacz et al., 2006)
-and the pulse diffusion model. 
-
-* Drift Diffusion Model and it's variants:
-  + Pure DDM: using only drift rate, boundary, non-decision time, and starting point)
-  + Extended DDM: The pure DDM + trial-to-trial variabliity in the drift rate, non-decision time, and starting point
-  + Collapsing Bounds: the bounds collapse over time according to a linear, hyperbolic ratio, or weibull function
-  + Urgency Signal: a linear or logistic urgency signal
-<br>
-<br>
-* Pulse Diffusion Model: an extension of the DDM that considers moment-by-moment, time-varying evidence, 
-such as a train of pulses of sound or light. This model is adapted from Brunton et. al., 2013.
-As implemented here, the pulse diffusion model is the exact same weiner diffusion process as the DDM, 
-but the drift is a function of the momentary stimulus or evidence towards the upper and lower boundary.
-Important notes:
-  + This model uses the same parameter convention as the DDM, with three exceptions.
-  Trial-to-trial variabliity in the drift rate is replaced with moment-to-moment variability in the drift rate.
-  Trial-to-trial variability in the starting point uses a normal distribution, whereas it is uniform in the DDM.
-  + This is actually an OU-process, not just an weiner diffusion process. There is an additional parameter, labmda. 
-  For lambda = 0, this model is equal to a weiner diffusion process, but for lambda != 0, it is an OU-process.
-  + This model offers the same collapsing bounds and urgency paramters as the DDM, but it is not recommended to use 
-  these parameters if you are also using allowing lambda to vary.
-  
   
 *****
 
@@ -54,11 +27,12 @@ The drift diffusion model requires three main parameters:
 Optional parameters include:
 
 * z: starting point (between 0-1, z = 0.5 is the mid point)
+* dc: drift criterion or bias in the drift rate (dc > 0 means faster drift to upper boundary than to lower)
 * sv: trial-to-trial variability in the drift rate, v ~ N(v, sv))
 * sz: trial-to-trial variability in the starting point, z ~ U(z-sz/2, z+sz/2)
 * st0: trial-to-trial variability in the non-decision time, t0 ~ U(t0-st0/2, t0+st0/2)
 
-Other parameters may be included to implement collapsing bounds or an urgency signal. These parameters will only take effect if the `bounds` or `urgency` is set (please see `help(diffusion_model)`):
+Other parameters may be included to implement collapsing bounds or an urgency signal. These parameters will only take effect if the `bounds` or `urgency` is set -- please see `help(diffusion_model)`:
 
 * a_prime: the degree of boundary collapse
 * tc: the time course of boundary collapse
@@ -99,7 +73,7 @@ ddm_simulation$behavior$correctSide = 1
 ddm = diffusion_model$new(ddm_simulation$behavior, # your data
                           model_name = "my_ddm",
                           include = c("z"), # specify optional parameters using the include argument
-                          verbose = TRUE) # set to FALSE to ignore the benign messages
+                          verbose = TRUE) # set to FALSE to ignore the benign parameter messages
 ```
 
 #### 3. Fit the model to data

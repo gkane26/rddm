@@ -1,5 +1,8 @@
+#ifdef _OPENMP
+  #include <omp.h>
+#endif
+
 #include <RcppArmadillo.h>
-#include <omp.h>
 #include "bounds.h"
 #include "sim_pulse.h"
 #include "pulse_nll.h"
@@ -43,8 +46,6 @@ DataFrame pulse_predict(int n, List stimuli,
                         arma::vec lambda=0, arma::vec aprime=0, arma::vec kappa=0, arma::vec tc=0, bool check_pars=true,
                         double dt=.001, double dx=.05, int bounds=0, int n_threads=1){
   
-  omp_set_num_threads(n_threads);
-  
   // check parameter vectors
   unsigned int stim_length = stimuli.length();
   if(check_pars){
@@ -82,7 +83,7 @@ DataFrame pulse_predict(int n, List stimuli,
   arma::ivec choices(n*stim_length), trials(n*stim_length);
   arma::vec rt(n*stim_length);
   
-#pragma omp parallel for
+#pragma omp parallel for num_threads(n_threads)
   for(unsigned int i=0; i<stim_length; i++){
     
     Rcout << i << "\n";
