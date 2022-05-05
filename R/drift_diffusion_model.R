@@ -183,11 +183,17 @@ predict_diffusion_model = function(pars=NULL,
     legal_pars = c("v", "a", "t0", "z", "sv", "sz", "st0", "s")
     fixed = private$fixed[names(private$fixed) %in% legal_pars]
     
-    if ("z" %in% names(pars_only_mat)){
+    if ("z" %in% names(pars_only_mat)) {
       pars_only_mat[, z := z*a]
     }
-    
-    if("dc" %in% names(pars_only_mat)){
+    if ("sz" %in% names(pars_only_mat)) {
+      pars_only_mat[, sz := sz * a]
+    }
+    if ("st0" %in% names(pars_only_mat)) {
+      pars_only_mat[, st0 := st0 * t0]
+      pars_only_mat[, t0 := t0 - st0 / 2]
+    }
+    if("dc" %in% names(pars_only_mat)) {
       pars_only_mat[, v := v + dc]
       pars_only_mat[, dc := NULL]
     }
@@ -224,6 +230,7 @@ predict_diffusion_model = function(pars=NULL,
                                       max_time=private$max_time,
                                       bounds=private$bounds,
                                       urgency=private$urgency,
+                                      max_time=private$max_time,
                                       ...))$behavior
         
       } else if (method == "integral") {
