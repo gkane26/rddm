@@ -9,8 +9,6 @@ and the pulse diffusion model.
   - Extended DDM: The pure DDM + trial-to-trial variabliity in the drift rate, non-decision time, and starting point
   - Collapsing Bounds: the bounds collapse over time according to a linear, hyperbolic ratio, or weibull function
   - Urgency Signal: a linear or logistic urgency signal
-<br>
-<br>
 - Pulse Diffusion Model: an extension of the DDM that considers moment-by-moment, time-varying evidence, 
 such as a train of pulses of sound or light. This model is adapted from [Brunton et. al., 2013](https://www.science.org/doi/10.1126/science.1233912).
 As implemented here, the pulse diffusion model is the exact same weiner diffusion process as the DDM, 
