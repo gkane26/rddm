@@ -26,7 +26,7 @@ LinkingTo:
     RcppArmadillo,
     RcppZiggurat,
     dqrng
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.0
 Encoding: UTF-8
 Roxygen: list(r6 = FALSE)
 Suggests: 

@@ -115,6 +115,10 @@ pulse_x2_obj = function(pars,
   
   chisq = 0
   
+  if (private$par_transform[, .N] == dat[, .N]) {
+    stop("chisq objective not supported for full single trial simulation of pulse model")
+  }
+  
   for (i in 1:private$par_transform[, .N]) {
     
     # simulate trials
@@ -195,33 +199,63 @@ pulse_qmpe_obj = function(pars,
   
   qmpe_nll = 0
   
-  for (i in 1:private$par_transform[, .N]) {
+  if (private$par_transform[, .N] < sum(data_q[, n_response])) {
     
-    # simulate trials
-    par_list = as.list(pars_only_mat[i])
-    
-    this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
-                                          list(stimuli=private$stim_list[[i]]),
-                                          par_list,
-                                          private$fixed,
-                                          v_scale=private$v_scale,
-                                          bounds=private$bounds,
-                                          urgency=private$urgency,
-                                          seed=seed,
-                                          ...))$behavior)
-    
-    # get rt quantile matrix
-    sub_q = copy(data_q)
-    for(j in 1:length(private$sim_cond)) {
-      sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+    qmpe_nll = foreach::foreach(i = 1:private$par_transform[, .N], .combine=sum) %do% {
+      # simulate trials
+      par_list = as.list(pars_only_mat[i])
+      this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
+                                            list(stimuli=private$stim_list[[i]]),
+                                            par_list,
+                                            private$fixed,
+                                            v_scale=private$v_scale,
+                                            bounds=private$bounds,
+                                            urgency=private$urgency,
+                                            seed=seed,
+                                            ...))$behavior)
+      
+      # get rt quantile matrix
+      sub_q = copy(data_q)
+      for(j in 1:length(private$sim_cond)) {
+        sub_q = sub_q[get(private$sim_cond[j]) == private$par_matrix[i, get(private$sim_cond[j])]]
+      }
+      rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+      n_rt = sub_q[, n_response, .(response)][, n_response]
+      sim_rts = list(this_sim[response == 0, rt],
+                     this_sim[response == 1, rt],
+                     this_sim[is.na(response), rt])
+      
+      qmpe(sim_rts, rt_q_mat, private$p_q, n_rt, min_p=min_p)
     }
-    rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
-    n_rt = sub_q[, n_response, .(response)][, n_response]
-    sim_rts = list(this_sim[response == 0, rt],
-                   this_sim[response == 1, rt],
-                   this_sim[is.na(response), rt])
     
-    qmpe_nll = qmpe_nll + qmpe(sim_rts, rt_q_mat, private$p_q, n_rt, min_p=min_p)
+  } else {
+    
+    sim_full = foreach::foreach(i = 1:private$par_transform[, .N], .combine=rbind) %do% {
+      par_list = as.list(pars_only_mat[i])
+      this_sim = setDT(do.call(sim_pulse, c(n=n_sim,
+                                            list(stimuli=private$stim_list[[i]]),
+                                            par_list,
+                                            private$fixed,
+                                            v_scale=private$v_scale,
+                                            bounds=private$bounds,
+                                            urgency=private$urgency,
+                                            seed=seed,
+                                            ...))$behavior)
+      cbind(private$par_transform[i, private$sim_cond, with=F], this_sim)
+    }
+    
+    qmpe_nll = foreach::foreach(cs = 0:1, .combine=sum) %do% {
+      
+      this_sim = sim_full[correctSide == cs] 
+      sub_q = data_q[correctSide == cs]
+      
+      rt_q_mat = as.matrix(sub_q[, rt_q_cols, .(response), with=F])
+      n_rt = sub_q[, n_response, .(response)][, n_response]
+      sim_rts = list(this_sim[response == 0, rt],
+                     this_sim[response == 1, rt],
+                     this_sim[is.na(response), rt])
+      qmpe(sim_rts, rt_q_mat, private$p_q, n_rt, min_p=min_p)
+    }
     
   }
   

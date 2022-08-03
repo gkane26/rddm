@@ -6,6 +6,6 @@
 \alias{rddm-package}
 \title{rddm: Fit diffusion models to experimental data}
 \description{
-Pure DDM and extended DDM (Bogacz et al., 2006) using rtdist package    Collapsing bounds (Voskuilen et al., 2016)    Pulse diffusion model (see Brunton et al., 2013)
+Pure DDM and extended DDM (Bogacz et al., 2006) using rtdist package Collapsing bounds (Voskuilen et al., 2016) Pulse diffusion model (see Brunton et al., 2013)
 }
 \keyword{internal}
