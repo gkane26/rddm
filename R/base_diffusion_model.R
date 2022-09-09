@@ -77,10 +77,9 @@ fit_diffusion_model <- function(use_bounds=FALSE, transform_pars=FALSE, n_cores=
 }
 
 
-set_params = function(pars, reverse_v=T){
+set_params = function(pars){
   self$par_values = pars
   private$par_matrix = copy(private$par_transform)
-  
   
   for(i in (1+length(private$sim_cond)):(length(private$par_transform))){
     
@@ -103,9 +102,10 @@ set_params = function(pars, reverse_v=T){
     
   }
   
-  if (reverse_v) {
-    if("v" %in% names(private$par_matrix) & !("v" %in% names(private$as_function)))
+  if (private$reverse_v) {
+    if("v" %in% names(private$par_matrix)) {
       private$par_matrix[correctSide==0, v := -v]
+    }
   }
   
 }
@@ -129,7 +129,7 @@ objective_checks = function(pars,
     cat(" // ")
   }
   
-  private$set_params(pars, reverse_v=reverse_v)
+  private$set_params(pars)
   
   if(check_constraints){
     pass_checks = private$check_par_constraints()
@@ -159,6 +159,7 @@ init_model = function(dat,
                       extra_condition=NULL,
                       bounds=NULL,
                       urgency=NULL,
+                      reverse_v=FALSE,
                       verbose=TRUE,
                       ...){
   
@@ -335,6 +336,7 @@ init_model = function(dat,
   private$fixed=fixed_pars
   private$par_transform=par_transform
   private$sim_cond=simulate_conditions
+  private$reverse_v=reverse_v
   
   if (is.null(bounds)) {
     if("aprime" %in% par_corresponding) {
@@ -434,5 +436,7 @@ base_diffusion_model <- R6::R6Class("base_diffusion_model",
                                       as_function=NULL,
                                       bounds=NULL,
                                       urgency=NULL,
-                                      objective_checks=objective_checks
+                                      reverse_v=NULL,
+                                      objective_checks=objective_checks,
+                                      get_private=function(f) with(private, get(f))
                                     ))

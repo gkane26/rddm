@@ -13,7 +13,6 @@ pulse_fp_obj <- function(pars,
   checks = private$objective_checks(pars,
                                     transform_pars,
                                     check_constraints,
-                                    reverse_v=F,
                                     debug)
   pars = checks[[1]]
   pass = checks[[2]]
@@ -91,7 +90,6 @@ pulse_x2_obj = function(pars,
   checks = private$objective_checks(pars,
                                     transform_pars,
                                     check_constraints,
-                                    reverse_v=F,
                                     debug)
   pars = checks[[1]]
   pass = checks[[2]]
@@ -175,7 +173,6 @@ pulse_qmpe_obj = function(pars,
   checks = private$objective_checks(pars,
                                     transform_pars,
                                     check_constraints,
-                                    reverse_v=F,
                                     debug)
   pars = checks[[1]]
   pass = checks[[2]]
@@ -364,7 +361,7 @@ predict_pulse_model = function(pars=NULL, n=1, method="euler", stim_list=NULL, t
     }
     pars = self$solution$pars
   }
-  private$set_params(pars, reverse_v=F)
+  private$set_params(pars)
   
   ### loop through conditions
   

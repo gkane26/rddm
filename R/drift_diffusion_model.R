@@ -91,6 +91,7 @@ init_diffusion_model = function(dat,
                                 urgency=NULL,
                                 objective=NULL,
                                 max_time=10,
+                                reverse_v=TRUE,
                                 verbose=TRUE,
                                 ...){
   
@@ -137,6 +138,7 @@ init_diffusion_model = function(dat,
                    extra_condition=extra_condition,
                    bounds=bounds,
                    urgency=urgency,
+                   reverse_v=reverse_v,
                    verbose=verbose,
                    ...)
   
